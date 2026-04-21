@@ -5,7 +5,39 @@
       "Bash(.venv/bin/python -m pip list)",
       "Bash(.venv/bin/python -c ' *)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(python3 scripts/_paths.py alphagenome_weights)",
+      "Bash(.venv/bin/python -c \"from services.alphagenome_svc.model_loader import get_model, AlphaGenomePredictor; print\\('import OK'\\)\")",
+      "Bash(pkill -f \"uvicorn services.alphagenome_svc\")",
+      "Bash(SETTINGS_FILE=config/settings.dev.yaml uv run uvicorn services.alphagenome_svc.app:app --port 8001 --host 0.0.0.0)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s localhost:8001/health)",
+      "Bash(python3 -m json.tool)",
+      "Read(//tmp/**)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Read(//home/adam/.local/bin/**)",
+      "Read(//opt/**)",
+      "Bash(python3 -c ' *)",
+      "Bash(fuser 8001/tcp)",
+      "Bash(/opt/software/OmniGemmaNome/.venv/bin/python -c ' *)",
+      "Bash(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader)",
+      "Bash(nvidia-smi)",
+      "Bash(/home/adam/miniconda3/envs/omnigemmanome/bin/python -c \"import torch; print\\(torch.__version__\\); print\\('CUDA:', torch.cuda.is_available\\(\\)\\)\")",
+      "Read(//home/adam/miniconda3/envs/omnigemmanome/bin/**)",
+      "Bash(/home/adam/miniconda3/envs/omnigemmanome/bin/python3 -c \"import torch; print\\(torch.__version__\\); print\\('CUDA:', torch.cuda.is_available\\(\\)\\)\")",
+      "Bash(nvcc --version)",
+      "Read(//usr/local/**)",
+      "Bash(/home/adam/miniconda3/bin/uv pip *)",
+      "Bash(.venv/bin/python -c \"import torch; print\\(torch.__version__\\); print\\('CUDA:', torch.cuda.is_available\\(\\)\\); print\\('Device:', torch.cuda.get_device_name\\(0\\) if torch.cuda.is_available\\(\\) else 'N/A'\\)\")",
+      "Bash(pip index *)",
+      "Bash(.venv/bin/pip index *)",
+      "Bash(SETTINGS_FILE=config/settings.dev.yaml /home/adam/miniconda3/bin/uv run uvicorn services.alphagenome_svc.app:app --port 8001 --host 0.0.0.0)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python -c \"from services.agent_backend.tools.macros import AnalyzeGeneExpression, AnalyzeGeneArbitraryTracks; print\\('OK'\\)\")"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }
