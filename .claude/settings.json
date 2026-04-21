@@ -34,7 +34,13 @@
       "Bash(SETTINGS_FILE=config/settings.dev.yaml /home/adam/miniconda3/bin/uv run uvicorn services.alphagenome_svc.app:app --port 8001 --host 0.0.0.0)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(python -c \"from services.agent_backend.tools.macros import AnalyzeGeneExpression, AnalyzeGeneArbitraryTracks; print\\('OK'\\)\")"
+      "Bash(python -c \"from services.agent_backend.tools.macros import AnalyzeGeneExpression, AnalyzeGeneArbitraryTracks; print\\('OK'\\)\")",
+      "Bash(python3 -c \"import sys; print\\(sys.prefix\\)\")",
+      "Bash(.venv/bin/python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(pip3 show *)",
+      "Read(//usr/**)",
+      "Read(//.venv/**)"
     ],
     "additionalDirectories": [
       "/tmp"

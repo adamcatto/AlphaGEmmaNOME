@@ -160,6 +160,64 @@ class ScanJasparMotifsInput(BaseModel):
     tax_group: str = Field("vertebrates", description="Taxonomic group: 'vertebrates', 'insects', 'plants', etc.")
 
 
+# Phase 3 schemas
+
+class AnalyzeSplicingInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'NRXN1', 'TP53'.")
+    tissue_keywords: list[str] | None = Field(None, description="Optional tissue substrings to filter tracks (e.g. ['brain', 'neuron']).")
+    top_k: int = Field(5, description="Top tracks per splice head.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class Analyze3dContactsInput(BaseModel):
+    gene_symbol: str | None = Field(None, description="HGNC gene symbol. Mutually exclusive with locus.")
+    locus: str | None = Field(None, description="Genomic locus 'chrN:start-end'. Mutually exclusive with gene_symbol.")
+    top_k: int = Field(10, description="Top contact pairs to return.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class AnalyzeDifferentialRegulationInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'BRCA1', 'TP53'.")
+    tissue_a: str = Field(description="First tissue group substring, e.g. 'breast'.")
+    tissue_b: str = Field(description="Second tissue group substring, e.g. 'liver'.")
+    heads: list[str] | None = Field(None, description="Heads to compare. Default: ['atac', 'chip_tf', 'rna_seq'].")
+    top_k: int = Field(5, description="Top differential tracks per head per tissue.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class AnalyzeLargeRegionInput(BaseModel):
+    locus: str = Field(description="Genomic locus 'chrN:start-end'. Must span multiple AlphaGenome windows.")
+    heads: list[str] | None = Field(None, description="Heads to scan. Default: ['atac', 'chip_histone'].")
+    top_k: int = Field(3, description="Top tracks per tile to report.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class DesignCrisprGuideInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'BRCA1', 'TP53'.")
+    target_region: str | None = Field(None, description="'tss' (default), 'coding', or a specific locus 'chrN:start-end'.")
+    window_bp: int = Field(500, description="Window around target to scan for PAM sites.")
+    top_k: int = Field(5, description="Number of top guide candidates to return.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class AnalyzeAttributionInput(BaseModel):
+    locus: str = Field(description="Full AlphaGenome input window 'chrN:start-end'.")
+    head: str = Field(description="AlphaGenome head to attribute, e.g. 'atac', 'chip_tf'.")
+    track_index: int = Field(description="Track index within the head.")
+    attribution_region: str | None = Field(None, description="Sub-region for ISM 'chrN:start-end' (≤64 bp recommended).")
+    resolution: str = Field("128bp", description="'1bp' or '128bp'.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class OptimizeSequenceInput(BaseModel):
+    locus: str = Field(description="Full AlphaGenome input window 'chrN:start-end'.")
+    head: str = Field(description="Target AlphaGenome head to maximize, e.g. 'atac', 'cage'.")
+    track_index: int = Field(description="Track index within the head.")
+    design_region: str | None = Field(None, description="Sub-region to scan for mutations 'chrN:start-end' (≤100 bp recommended).")
+    top_k: int = Field(5, description="Number of top candidate mutations to return.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
 class AnalyzeVariantClinicalInput(BaseModel):
     gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'BRCA1', 'TP53'.")
     variant_hgvs: str | None = Field(None, description="Optional HGVS string for a specific variant to score with AlphaGenome.")
@@ -221,8 +279,12 @@ def make_tool(
 def build_tool_list() -> list[StructuredTool]:
     """Return LangChain StructuredTools for every tool enabled in tools.yaml."""
     from .alphagenome import GetTopTracks, PredictTracks, PredictVariantEffect
+    from .attribution import AnalyzeAttribution
     from .clinvar import QueryClinvar
+    from .comparative import AnalyzeDifferentialRegulation
     from .conservation import QueryConservation
+    from .contacts import Analyze3dContacts
+    from .crispr import DesignCrisprGuide
     from .encode import QueryEncodeElements
     from .genome_lookup import GeneToLocus
     from .gnomad import QueryGnomad
@@ -240,13 +302,16 @@ def build_tool_list() -> list[StructuredTool]:
         AnalyzeVariantClinical,
         AnalyzeVariantEffect,
     )
+    from .sequence_design import OptimizeSequence
+    from .splice import AnalyzeSplicing
+    from .tiled_scan import AnalyzeLargeRegion
     from .tracks import ListTracksByAssay
     from .uploads import UploadSequence
     from .variants import ParseHgvs
     from .viz import RenderPanel
 
     _ALL: list[tuple[type, str, type[BaseModel]]] = [
-        # --- Macros (enabled by default) ---
+        # --- Phase 1 macros (enabled by default) ---
         (AnalyzeGeneTfBinding, "analyze_gene_tf_binding", AnalyzeGeneTfBindingInput),
         (AnalyzeGeneExpression, "analyze_gene_expression", AnalyzeGeneExpressionInput),
         (AnalyzeGeneArbitraryTracks, "analyze_gene_arbitrary_tracks", AnalyzeGeneArbitraryTracksInput),
@@ -258,7 +323,13 @@ def build_tool_list() -> list[StructuredTool]:
         (AnalyzeGwasAssociations, "analyze_gwas_associations", AnalyzeGwasAssociationsInput),
         (AnalyzeKnownRegulatoryElements, "analyze_known_regulatory_elements", AnalyzeKnownRegulatoryElementsInput),
         (AnalyzeGtexExpression, "analyze_gtex_expression", AnalyzeGtexExpressionMacroInput),
-        # --- Primitives (disabled by default) ---
+        # Phase 3 macros
+        (AnalyzeSplicing, "analyze_splicing", AnalyzeSplicingInput),
+        (Analyze3dContacts, "analyze_3d_contacts", Analyze3dContactsInput),
+        (AnalyzeDifferentialRegulation, "analyze_differential_regulation", AnalyzeDifferentialRegulationInput),
+        (AnalyzeLargeRegion, "analyze_large_region", AnalyzeLargeRegionInput),
+        (DesignCrisprGuide, "design_crispr_guide", DesignCrisprGuideInput),
+        # --- Phase 1 primitives (disabled by default) ---
         (GeneToLocus, "gene_to_locus", GeneToLocusInput),
         (PredictTracks, "predict_tracks", PredictTracksInput),
         (PredictVariantEffect, "predict_variant_effect", PredictVariantEffectInput),
@@ -274,6 +345,9 @@ def build_tool_list() -> list[StructuredTool]:
         (QueryGtexExpression, "query_gtex_expression", QueryGtexExpressionInput),
         (QueryConservation, "query_conservation", QueryConservationInput),
         (ScanJasparMotifs, "scan_jaspar_motifs", ScanJasparMotifsInput),
+        # Phase 3 primitives (ISM-based — slow, disabled by default)
+        (AnalyzeAttribution, "analyze_attribution", AnalyzeAttributionInput),
+        (OptimizeSequence, "optimize_sequence", OptimizeSequenceInput),
     ]
 
     cfg = load_settings().tools

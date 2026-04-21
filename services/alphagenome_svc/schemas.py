@@ -89,3 +89,69 @@ class HealthResponse(BaseModel):
     genome_indexed: bool
     track_metadata_loaded: bool
     device: str
+
+
+# ---------------------------------------------------------------------------
+# Attribution (ISM-based)
+# ---------------------------------------------------------------------------
+
+class AttributionRequest(BaseModel):
+    locus: str
+    head: Head
+    track_index: int
+    attribution_region: str | None = None
+    resolution: Resolution = "128bp"
+    organism: Organism = "human"
+
+
+class PerBaseScores(BaseModel):
+    position: int
+    ref_base: str
+    A: float
+    C: float
+    G: float
+    T: float
+
+
+class AttributionResponse(BaseModel):
+    locus: str
+    attribution_region: str
+    head: str
+    track_index: int
+    positions: list[int]
+    ref_bases: list[str]
+    importance_scores: list[float]
+    per_base_scores: list[PerBaseScores]
+    reference_signal: float
+    summary: str
+
+
+# ---------------------------------------------------------------------------
+# Sequence optimization (ISM-ranked mutations)
+# ---------------------------------------------------------------------------
+
+class OptimizeSequenceRequest(BaseModel):
+    locus: str
+    head: Head
+    track_index: int
+    design_region: str | None = None
+    top_k: int = 5
+    organism: Organism = "human"
+
+
+class OptimizeMutation(BaseModel):
+    position: int
+    ref: str
+    alt: str
+    delta_signal: float
+    percent_change: float
+
+
+class OptimizeSequenceResponse(BaseModel):
+    locus: str
+    design_region: str
+    head: str
+    track_index: int
+    reference_signal: float
+    top_mutations: list[OptimizeMutation]
+    summary: str

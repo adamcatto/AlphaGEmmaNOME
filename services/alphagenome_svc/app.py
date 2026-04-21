@@ -15,9 +15,14 @@ from schema import load_settings
 
 from .model_loader import get_model
 from .schemas import (
+    AttributionRequest,
+    AttributionResponse,
     Head,
     HealthResponse,
     Organism,
+    OptimizeSequenceRequest,
+    OptimizeSequenceResponse,
+    PerBaseScores,
     PredictRequest,
     PredictResponse,
     TrackArray,
@@ -287,4 +292,221 @@ def predict(req: PredictRequest) -> PredictResponse:
         organism=req.organism,
         resolution=req.resolution,
         arrays=arrays,
+    )
+
+
+# ---------------------------------------------------------------------------
+# ISM helpers shared by /attribution and /optimize_sequence
+# ---------------------------------------------------------------------------
+
+_ISM_BASES = "ACGT"
+_ISM_MAX_REGION_BP = 256  # hard cap on ISM window to prevent runaway runtimes
+
+
+def _parse_locus_coords(locus: str) -> tuple[str, int, int]:
+    chrom, coords = locus.split(":", 1)
+    start_s, end_s = coords.split("-", 1)
+    return chrom, int(start_s), int(end_s)
+
+
+def _resolve_subregion(locus: str, sub: str | None, half_default: int) -> tuple[str, int, int]:
+    """Return (chrom, start, end) for the ISM sub-region."""
+    locus_chrom, locus_start, locus_end = _parse_locus_coords(locus)
+    if sub:
+        chrom, start, end = _parse_locus_coords(sub)
+    else:
+        center = (locus_start + locus_end) // 2
+        start = max(locus_start, center - half_default)
+        end = min(locus_end, center + half_default)
+        chrom = locus_chrom
+    # Clamp to locus boundaries and enforce max cap
+    start = max(start, locus_start)
+    end = min(end, locus_end)
+    end = min(end, start + _ISM_MAX_REGION_BP)
+    return chrom, start, end
+
+
+@app.post("/attribution", response_model=AttributionResponse)
+def attribution(req: AttributionRequest) -> AttributionResponse:
+    model = get_model()
+    if model is None:
+        raise HTTPException(503, "AlphaGenome weights not loaded.")
+
+    try:
+        ref_seq = fetch_sequence(req.locus, settings.paths.genome_fasta)
+    except FileNotFoundError:
+        raise HTTPException(503, "Reference genome not available.")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    chrom, attr_start, attr_end = _resolve_subregion(
+        req.locus, req.attribution_region, half_default=32
+    )
+    locus_chrom, locus_start, _ = _parse_locus_coords(req.locus)
+    attr_region_str = f"{chrom}:{attr_start}-{attr_end}"
+
+    organism_idx = settings.models.organism_index[req.organism]
+    res_int = {"1bp": 1, "128bp": 128}[req.resolution]
+
+    # Reference signal
+    ref_preds = model.predict_sequence(ref_seq, organism_idx, (req.head,), (res_int,))
+    try:
+        ref_signal = model.extract_track_signal(ref_preds, req.head, req.track_index, res_int)
+    except (KeyError, IndexError) as e:
+        raise HTTPException(400, str(e))
+
+    positions: list[int] = []
+    ref_bases: list[str] = []
+    importance_scores: list[float] = []
+    per_base_scores: list[PerBaseScores] = []
+
+    logger.info(
+        "ISM attribution: locus=%s region=%s head=%s track=%d n_positions=%d",
+        req.locus, attr_region_str, req.head, req.track_index, attr_end - attr_start,
+    )
+
+    for genomic_pos in range(attr_start, attr_end):
+        seq_offset = genomic_pos - locus_start
+        if seq_offset < 0 or seq_offset >= len(ref_seq):
+            continue
+
+        ref_base = ref_seq[seq_offset].upper()
+        alts = [b for b in _ISM_BASES if b != ref_base]
+
+        scores: dict[str, float] = {"A": 0.0, "C": 0.0, "G": 0.0, "T": 0.0}
+        scores[ref_base] = 0.0  # delta of ref vs ref is 0
+        max_abs_delta = 0.0
+
+        for alt in alts:
+            mut_seq = ref_seq[:seq_offset] + alt + ref_seq[seq_offset + 1 :]
+            alt_preds = model.predict_sequence(mut_seq, organism_idx, (req.head,), (res_int,))
+            alt_signal = model.extract_track_signal(alt_preds, req.head, req.track_index, res_int)
+            delta = alt_signal - ref_signal
+            scores[alt] = round(float(delta), 6)
+            max_abs_delta = max(max_abs_delta, abs(delta))
+
+        positions.append(genomic_pos)
+        ref_bases.append(ref_base)
+        importance_scores.append(round(max_abs_delta, 6))
+        per_base_scores.append(
+            PerBaseScores(
+                position=genomic_pos,
+                ref_base=ref_base,
+                A=scores["A"],
+                C=scores["C"],
+                G=scores["G"],
+                T=scores["T"],
+            )
+        )
+
+    top_pos = positions[importance_scores.index(max(importance_scores))] if importance_scores else None
+    summary = (
+        f"ISM attribution over {len(positions)} positions in {attr_region_str}. "
+        f"Most important position: {top_pos} (score={max(importance_scores):.4f})."
+        if importance_scores
+        else f"No positions analyzed in {attr_region_str}."
+    )
+
+    return AttributionResponse(
+        locus=req.locus,
+        attribution_region=attr_region_str,
+        head=req.head,
+        track_index=req.track_index,
+        positions=positions,
+        ref_bases=ref_bases,
+        importance_scores=importance_scores,
+        per_base_scores=per_base_scores,
+        reference_signal=round(ref_signal, 6),
+        summary=summary,
+    )
+
+
+@app.post("/optimize_sequence", response_model=OptimizeSequenceResponse)
+def optimize_sequence(req: OptimizeSequenceRequest) -> OptimizeSequenceResponse:
+    model = get_model()
+    if model is None:
+        raise HTTPException(503, "AlphaGenome weights not loaded.")
+
+    try:
+        ref_seq = fetch_sequence(req.locus, settings.paths.genome_fasta)
+    except FileNotFoundError:
+        raise HTTPException(503, "Reference genome not available.")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    chrom, des_start, des_end = _resolve_subregion(
+        req.locus, req.design_region, half_default=50
+    )
+    locus_chrom, locus_start, _ = _parse_locus_coords(req.locus)
+    design_region_str = f"{chrom}:{des_start}-{des_end}"
+
+    organism_idx = settings.models.organism_index[req.organism]
+    # Use 128bp resolution for speed
+    res_int = 128
+
+    ref_preds = model.predict_sequence(ref_seq, organism_idx, (req.head,), (res_int,))
+    try:
+        ref_signal = model.extract_track_signal(ref_preds, req.head, req.track_index, res_int)
+    except (KeyError, IndexError) as e:
+        raise HTTPException(400, str(e))
+
+    logger.info(
+        "Sequence optimization: locus=%s region=%s head=%s track=%d n_pos=%d",
+        req.locus, design_region_str, req.head, req.track_index, des_end - des_start,
+    )
+
+    mutations: list[dict] = []
+    for genomic_pos in range(des_start, des_end):
+        seq_offset = genomic_pos - locus_start
+        if seq_offset < 0 or seq_offset >= len(ref_seq):
+            continue
+
+        ref_base = ref_seq[seq_offset].upper()
+        for alt in _ISM_BASES:
+            if alt == ref_base:
+                continue
+            mut_seq = ref_seq[:seq_offset] + alt + ref_seq[seq_offset + 1 :]
+            alt_preds = model.predict_sequence(mut_seq, organism_idx, (req.head,), (res_int,))
+            alt_signal = model.extract_track_signal(alt_preds, req.head, req.track_index, res_int)
+            delta = alt_signal - ref_signal
+            pct = (delta / max(abs(ref_signal), 1e-9)) * 100.0
+            mutations.append(
+                {
+                    "position": genomic_pos,
+                    "ref": ref_base,
+                    "alt": alt,
+                    "delta_signal": round(float(delta), 6),
+                    "percent_change": round(float(pct), 2),
+                }
+            )
+
+    # Sort by delta descending; only keep top_k with positive delta
+    mutations.sort(key=lambda m: -m["delta_signal"])
+    top = mutations[: req.top_k]
+
+    best = top[0] if top else None
+    summary = (
+        f"Top mutation: {best['ref']}>{best['alt']}@{best['position']} "
+        f"(Δ={best['delta_signal']:+.4f}, {best['percent_change']:+.1f}%)."
+        if best
+        else f"No beneficial mutations found in {design_region_str}."
+    )
+
+    return OptimizeSequenceResponse(
+        locus=req.locus,
+        design_region=design_region_str,
+        head=req.head,
+        track_index=req.track_index,
+        reference_signal=round(ref_signal, 6),
+        top_mutations=[
+            OptimizeMutation(
+                position=m["position"],
+                ref=m["ref"],
+                alt=m["alt"],
+                delta_signal=m["delta_signal"],
+                percent_change=m["percent_change"],
+            )
+            for m in top
+        ],
+        summary=summary,
     )

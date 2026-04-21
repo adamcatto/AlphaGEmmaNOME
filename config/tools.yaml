@@ -76,3 +76,27 @@ query_conservation:
 
 scan_jaspar_motifs:
   enabled: false
+
+# Phase 3 macros — AlphaGenome advanced analysis (enabled by default).
+analyze_splicing:
+  enabled: true
+
+analyze_3d_contacts:
+  enabled: true
+
+analyze_differential_regulation:
+  enabled: true
+
+analyze_large_region:
+  enabled: true
+
+design_crispr_guide:
+  enabled: true
+
+# Phase 3 primitives — ISM-based (disabled by default; each call requires
+# N×3 AlphaGenome forward passes — can take several minutes).
+analyze_attribution:
+  enabled: false
+
+optimize_sequence:
+  enabled: false

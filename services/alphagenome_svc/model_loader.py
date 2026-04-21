@@ -253,6 +253,53 @@ class AlphaGenomePredictor:
     def __call__(self, *args, **kwargs):
         return self.backbone(*args, **kwargs)
 
+    def predict_sequence(
+        self,
+        sequence: str,
+        organism_index: int,
+        heads: tuple,
+        resolutions: tuple,
+    ) -> dict:
+        """Run predict() for a raw DNA sequence string."""
+        import torch
+
+        _BASE_ORDER_LOCAL = {"A": 0, "C": 1, "G": 2, "T": 3}
+        n = len(sequence)
+        t = torch.zeros(1, n, 4, dtype=torch.float32)
+        for i, base in enumerate(sequence.upper()):
+            idx = _BASE_ORDER_LOCAL.get(base)
+            if idx is not None:
+                t[0, i, idx] = 1.0
+        dna = t.to(self.device)
+        with torch.no_grad():
+            return self.predict(dna, organism_index, heads, resolutions)
+
+    def extract_track_signal(
+        self,
+        preds: dict,
+        head: str,
+        track_index: int,
+        resolution: int,
+    ) -> float:
+        """Return the mean signal for one track from a predict() result."""
+        import torch
+        import torch.nn.functional as F
+
+        head_out = preds.get(head)
+        if head_out is None:
+            raise KeyError(f"Head {head!r} not in predictions.")
+        if isinstance(head_out, dict):
+            tensor = head_out.get(resolution) or next(iter(head_out.values()))
+        else:
+            tensor = head_out
+
+        arr = tensor.detach().cpu()
+        if arr.ndim == 4:
+            arr = arr[0]  # [L, L, T] for contact_maps
+        if track_index >= arr.shape[-1]:
+            raise IndexError(f"track_index {track_index} out of range for head {head!r} ({arr.shape[-1]} tracks).")
+        return float(arr[..., track_index].mean())
+
 
 def get_model():
     """Return the AlphaGenomePredictor, loading it on first call.
