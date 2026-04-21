@@ -206,3 +206,171 @@
         * Query databases to retrieve the requested information (e.g. reference genome sequence, gene annotation, known variants, etc.)
         * Annotate retrieved information with metadata (e.g. source of information, relevance to the question, etc.)
         * Generate a final answer summarizing the retrieved information and its relevance to the specific question
+
+* What minimal sequence edits would change the regulatory behavior of [gene / locus / sequence] in [context]?
+    * Examples:
+        * "What minimal edits would increase BRCA1 expression in breast tissue?"
+        * "What mutations would reduce chromatin accessibility at chr17:43044295-43125483 in K562 cells?"
+    * Subtasks:
+        * Define objective (e.g. increase expression, decrease TF binding)
+        * Run gradient-based or search-based sequence optimization
+        * Evaluate candidate edits with forward passes
+        * Rank edits by effect size and minimality (edit distance)
+        * Generate a final answer summarizing actionable sequence changes
+
+* What is the counterfactual effect of mutating [position(s)] in [sequence] in [context]?
+    * Examples:
+        * "What happens if we mutate the TATA box in this promoter?"
+        * "What is the effect of mutating position 12345 A→G in this sequence?"
+    * Subtasks:
+        * Generate perturbed sequences
+        * Run model inference on original vs perturbed
+        * Compute delta across heads (expression, accessibility, TF binding)
+        * Attribute effects to specific mechanisms
+        * Generate a final answer summarizing causal effects
+
+* What sequence features drive the predictions for [gene / locus / sequence] in [context]?
+    * Examples:
+        * "What motifs explain accessibility at BRCA1 in breast tissue?"
+    * Subtasks:
+        * Run attribution methods (e.g. integrated gradients, DeepLIFT)
+        * Identify high-importance regions
+        * Map to known motifs / regulatory grammar
+        * Aggregate across tracks
+        * Generate a final answer summarizing key drivers
+
+* What transcription factor motifs are enriched in [sequence / region] in [context]?
+    * Subtasks:
+        * Scan sequence for motif instances
+        * Weight motifs by model attribution or predicted binding
+        * Compare against background
+        * Report enriched motifs with effect sizes
+        * Generate a final answer summarizing enriched motifs
+
+* How do the regulatory properties of [gene / locus / sequence] differ between [context A] and [context B]?
+    * Examples:
+        * "How does BRCA1 regulation differ between breast and liver tissue?"
+    * Subtasks:
+        * Run model inference in both contexts
+        * Compute differential signals across heads
+        * Identify context-specific TFs, marks, accessibility
+        * Generate a final answer summarizing key differences
+
+* Which regions near [gene / locus] are differentially active between [conditions]?
+    * Subtasks:
+        * Slide window across region
+        * Compute differential signal
+        * Identify peaks of divergence
+        * Annotate regulatory elements
+        * Generate a final answer summarizing differential regions
+
+* Integrate sequence-based predictions with experimental data for [gene / locus] in [context]
+    * Examples:
+        * "Compare predicted vs observed ATAC-seq at BRCA1 in K562 cells"
+    * Subtasks:
+        * Retrieve experimental tracks
+        * Align with model predictions
+        * Compute concordance metrics
+        * Highlight discrepancies
+        * Generate a final answer summarizing agreement/disagreement
+
+* What regulatory mechanisms explain discrepancies between model predictions and observed data?
+    * Subtasks:
+        * Identify mismatched regions
+        * Check missing modalities (e.g. 3D contacts, cofactors)
+        * Hypothesize missing factors
+        * Suggest experiments
+        * Generate a final answer summarizing hypotheses
+
+* Which distal elements regulate [gene] in [context]?
+    * Subtasks:
+        * Use 3D interaction predictions
+        * Link enhancers to promoters
+        * Rank distal elements by influence
+        * Annotate with TF binding and chromatin marks
+        * Generate a final answer summarizing distal regulators
+
+* What is the regulatory landscape across a large genomic region (e.g. 1Mb) in [context]?
+    * Subtasks:
+        * Tile region into windows
+        * Run model across tiles
+        * Aggregate tracks into genome browser–like summary
+        * Identify domains, peaks, boundaries
+        * Generate a final answer summarizing landscape structure
+
+* Generate a DNA sequence that achieves [target regulatory profile] in [context]
+    * Examples:
+        * "Generate a sequence with high accessibility and strong H3K27ac in liver cells"
+    * Subtasks:
+        * Define target vector across heads
+        * Optimize sequence via gradient/search
+        * Validate with forward passes
+        * Generate a final answer with candidate sequences and predicted properties
+
+* Generate variants of [sequence] that preserve function but increase robustness
+    * Subtasks:
+        * Define invariance constraints
+        * Generate sequence variants
+        * Evaluate variance in predictions
+        * Select robust designs
+        * Generate a final answer summarizing robust variants
+
+* What are the predicted splicing patterns of [gene / sequence] in [context]?
+    * Subtasks:
+        * Run splice prediction heads
+        * Identify splice sites, junction usage
+        * Annotate isoforms
+        * Generate a final answer summarizing splicing patterns
+
+* How do variants affect splicing of [gene / sequence]?
+    * Subtasks:
+        * Introduce variant
+        * Compare splice predictions
+        * Quantify junction usage changes
+        * Flag cryptic splice sites
+        * Generate a final answer summarizing splicing effects
+
+* How conserved is [sequence / region] across species?
+    * Subtasks:
+        * Query conservation tracks (phyloP, phastCons)
+        * Align orthologous regions
+        * Summarize conservation vs function
+        * Generate a final answer summarizing conservation
+
+* How do regulatory properties of [gene] differ across species?
+    * Subtasks:
+        * Map orthologous loci
+        * Run models or retrieve data per species
+        * Compare regulatory signals
+        * Identify conserved vs divergent mechanisms
+        * Generate a final answer summarizing differences
+
+* How confident is the model in its predictions for [gene / locus / sequence] in [context]?
+    * Subtasks:
+        * Estimate uncertainty (ensembles, dropout)
+        * Identify unstable regions
+        * Report confidence intervals
+        * Generate a final answer summarizing uncertainty
+
+* Which predictions are most sensitive to input perturbations?
+    * Subtasks:
+        * Apply random perturbations
+        * Measure variance in outputs
+        * Identify fragile regulatory features
+        * Generate a final answer summarizing sensitivity
+
+* Automatically decompose a natural language genomics query into executable subtasks
+    * Subtasks:
+        * Parse query
+        * Identify required tools/models
+        * Build execution graph
+        * Execute and aggregate results
+        * Generate a final answer from composed outputs
+
+* Cache, reuse, and compose intermediate model outputs across tasks
+    * Subtasks:
+        * Identify reusable computations (e.g. embeddings, predictions)
+        * Store in structured format
+        * Retrieve for downstream tasks
+        * Reduce redundant computation
+        * Generate a final answer leveraging cached results
