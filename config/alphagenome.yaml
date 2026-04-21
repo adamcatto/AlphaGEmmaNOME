@@ -5,6 +5,6 @@ default_heads:
   - atac
 default_resolution: 128bp
 max_input_length: 131072
-device: cpu
+device: cuda
 batch_size: 1
 dtype: float16

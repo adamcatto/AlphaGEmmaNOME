@@ -158,8 +158,104 @@ def _convert_official_to_community(sd: dict) -> dict:
     return out
 
 
+_HEAD_NAMES = ["atac", "dnase", "procap", "cage", "rna_seq", "chip_tf", "chip_histone"]
+_HEAD_RESOLUTIONS = [1, 128]
+
+
+class AlphaGenomePredictor:
+    """Wraps the backbone + checkpoint head weights and exposes predict().
+
+    The gtca/alphagenome_pytorch checkpoint stores per-organism head weights as
+    [num_organisms, num_tracks, input_dim] tensors that don't match the
+    community AlphaGenome ModuleDict head structure.  We apply them directly.
+    """
+
+    def __init__(self, backbone, raw_sd: dict, device: str):
+        self.backbone = backbone
+        self.device = device
+
+        # Pre-index head weights: _heads[head][res] = (w, b, rs)
+        self._heads: dict = {}
+        for head in _HEAD_NAMES:
+            for res in _HEAD_RESOLUTIONS:
+                wk = f"heads.{head}.convs.{res}.weight"
+                if wk not in raw_sd:
+                    continue
+                entry = self._heads.setdefault(head, {})
+                entry[res] = (
+                    raw_sd[wk],
+                    raw_sd[f"heads.{head}.convs.{res}.bias"],
+                    raw_sd.get(f"heads.{head}.residual_scales.{res}"),
+                )
+
+        # Contact maps (stored differently: [org, in_dim, num_tracks])
+        self._cm_w = raw_sd.get("contact_maps_head.linear.weight")
+        self._cm_b = raw_sd.get("contact_maps_head.linear.bias")
+
+    def predict(self, dna, organism_index: int, heads: tuple, resolutions: tuple) -> dict:
+        import torch
+        import torch.nn.functional as F
+
+        batch = dna.shape[0]
+        org_t = torch.full((batch,), organism_index, device=self.device, dtype=torch.long)
+
+        # Backbone expects integer indices [batch, seq_len]; convert from float one-hot if needed
+        seq = dna.argmax(dim=-1).long() if dna.is_floating_point() else dna.long()
+        embeds = self.backbone.get_embeds(seq, org_t)
+        embeds_1bp, embeds_128bp, embeds_pair = embeds
+
+        result: dict = {}
+        for head_name in heads:
+            if head_name not in self._heads:
+                if head_name == "contact_maps" and self._cm_w is not None:
+                    # Per-organism weight is [in_dim, num_tracks] (already transposed)
+                    w = self._cm_w[organism_index].float().to(self.device)
+                    b = self._cm_b[organism_index].float().to(self.device)
+                    pair_f = embeds_pair.float()
+                    # symmetrize (average with transpose)
+                    pair_f = (pair_f + pair_f.transpose(1, 2)) * 0.5
+                    result["contact_maps"] = pair_f @ w + b
+                continue
+
+            head_res_dict = self._heads[head_name]
+            head_out: dict = {}
+            for res in resolutions:
+                if res not in head_res_dict:
+                    continue
+                w_raw, b_raw, rs_raw = head_res_dict[res]
+                # Per-organism slice: [num_tracks, input_dim]
+                w = w_raw[organism_index].float().to(self.device)
+                b = b_raw[organism_index].float().to(self.device)
+
+                x = (embeds_1bp if res == 1 else embeds_128bp).float()
+                # [batch, seq_len, num_tracks]
+                pred = x @ w.T + b
+                if rs_raw is not None:
+                    rs = rs_raw[organism_index].float().to(self.device)
+                    pred = F.softplus(pred) * F.softplus(rs)
+                head_out[res] = pred
+
+            if len(head_out) == 1:
+                result[head_name] = next(iter(head_out.values()))
+            elif head_out:
+                result[head_name] = head_out
+
+        return result
+
+    def eval(self):
+        self.backbone.eval()
+        return self
+
+    def to(self, device):
+        self.backbone.to(device)
+        return self
+
+    def __call__(self, *args, **kwargs):
+        return self.backbone(*args, **kwargs)
+
+
 def get_model():
-    """Return the AlphaGenome model, loading it on first call.
+    """Return the AlphaGenomePredictor, loading it on first call.
 
     Returns None if weights aren't present — callers should surface a clear
     error rather than blocking. Lazy loading keeps dev startup fast when only
@@ -183,16 +279,20 @@ def get_model():
         from safetensors.torch import load_file
 
         logger.info("Loading AlphaGenome from %s (device=%s)", weights_path, settings.alphagenome.device)
-        model = AlphaGenome()
-        state_dict = load_file(str(weights_path))
+        raw_sd = load_file(str(weights_path))
 
-        if _is_official_format(state_dict):
-            logger.info("Detected official checkpoint format — converting to alphagenome_pytorch layout")
-            state_dict = _convert_official_to_community(state_dict)
+        backbone = AlphaGenome()
+        backbone_sd = _convert_official_to_community(raw_sd) if _is_official_format(raw_sd) else raw_sd
+        if _is_official_format(raw_sd):
+            logger.info("Detected official checkpoint format — converting backbone to alphagenome_pytorch layout")
+        missing, unexpected = backbone.load_state_dict(backbone_sd, strict=False)
+        if missing:
+            logger.debug("load_state_dict missing keys (%d): %s …", len(missing), missing[:5])
 
-        model.load_state_dict(state_dict, strict=False)
-        model = model.to(settings.alphagenome.device)
-        model.eval()
-        _model = model
-        logger.info("AlphaGenome loaded.")
+        backbone = backbone.to(settings.alphagenome.device)
+        backbone.eval()
+
+        predictor = AlphaGenomePredictor(backbone, raw_sd, settings.alphagenome.device)
+        _model = predictor
+        logger.info("AlphaGenome loaded (backbone + %d head types).", len(predictor._heads))
         return _model

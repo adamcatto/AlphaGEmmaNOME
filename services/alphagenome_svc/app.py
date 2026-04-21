@@ -126,10 +126,17 @@ def get_tracks() -> list[TrackInfo]:
     return _tracks_cache
 
 
-def _one_hot(sequence: str):
-    from alphagenome_pytorch.utils.sequence import sequence_to_onehot_tensor
+_BASE_ORDER = {"A": 0, "C": 1, "G": 2, "T": 3}
 
-    return sequence_to_onehot_tensor(sequence).unsqueeze(0)
+def _one_hot(sequence: str):
+    import torch
+    n = len(sequence)
+    t = torch.zeros(n, 4, dtype=torch.float32)
+    for i, base in enumerate(sequence.upper()):
+        idx = _BASE_ORDER.get(base)
+        if idx is not None:
+            t[i, idx] = 1.0
+    return t.unsqueeze(0)
 
 
 def _encode_array(arr: np.ndarray) -> TrackArray:

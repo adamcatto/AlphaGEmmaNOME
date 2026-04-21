@@ -59,10 +59,10 @@ Open four terminals (or use a tool like `foreman` / `tmuxinator` / `docker-compo
 ollama serve
 
 # Terminal 2
-uv run uvicorn services.alphagenome_svc.app:app --port 8001
+uv run uvicorn services.alphagenome_svc.app:app --port 8001 --host 0.0.0.0
 
 # Terminal 3
-uv run uvicorn services.agent_backend.app:app --port 8000 --reload
+uv run uvicorn services.agent_backend.app:app --port 8000 --host 0.0.0.0 --reload
 
 # Terminal 4
 cd frontend && npm run dev

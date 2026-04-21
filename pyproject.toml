@@ -11,10 +11,16 @@ dependencies = [
     "uvicorn>=0.44.0",
 ]
 
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
 [tool.uv.sources]
 omnigemmanome-config = { workspace = true }
 omnigemmanome-alphagenome-svc = { workspace = true }
 omnigemmanome-agent-backend = { workspace = true }
+torch = { index = "pytorch-cu126" }
 
 [tool.uv.workspace]
 members = [
