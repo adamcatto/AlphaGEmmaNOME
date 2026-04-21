@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -9,24 +10,26 @@ import httpx
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from schema import load_settings
 
-import json
-
-from .agent import build_agent
-from .router import classify, stream_conversational
+from .graph import get_graph
 from .sessions import STORE
-from .streaming import EventBus
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# App setup
+# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Agent backend starting. Ollama=%s", load_settings().ollama.base_url)
+    # Warm the graph singleton so the first request doesn't pay compilation cost.
+    get_graph()
     yield
 
 
@@ -40,6 +43,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ---------------------------------------------------------------------------
+# Request/response models
+# ---------------------------------------------------------------------------
 
 class ChatRequest(BaseModel):
     message: str
@@ -57,6 +64,25 @@ class HealthResponse(BaseModel):
     ollama_reachable: bool
     alphagenome_reachable: bool
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _sse(event: str, data: dict) -> dict:
+    return {"event": event, "data": json.dumps(data, default=str)}
+
+
+def _is_reasoning_token(content: str) -> bool:
+    """True while streaming inside a <think> block."""
+    # We track inline think-block state in the stream handler instead of here;
+    # this is just a helper for the closing-tag sentinel.
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
@@ -121,8 +147,6 @@ def get_session_tracks(
     if arr is None:
         raise HTTPException(404, f"Head {head!r} not in prediction.")
 
-    # AlphaGenome outputs arrive as (batch, positions, tracks); strip a singleton
-    # batch dim so this endpoint always sees (positions, tracks) for 1D heads.
     if arr.ndim == 3 and arr.shape[0] == 1:
         arr = arr[0]
     if arr.ndim != 2:
@@ -144,7 +168,6 @@ def get_session_tracks(
         idx_list = list(range(min(track_count, 16)))
 
     positions = arr.shape[0]
-    # Block-mean downsample so peaks stay visible without shipping 130k points/track.
     if positions > max_points:
         bucket = positions // max_points
         truncated = arr[: bucket * max_points, idx_list]
@@ -153,8 +176,6 @@ def get_session_tracks(
     else:
         values = arr[:, idx_list]
 
-    # Annotate with track metadata (assay/cell_type/biosample) from alphagenome_svc.
-    # Best-effort: failure here should not break the render.
     metadata_by_idx: dict[int, dict] = {}
     try:
         with httpx.Client(timeout=5.0) as c:
@@ -188,46 +209,128 @@ def get_session_tracks(
     }
 
 
+# ---------------------------------------------------------------------------
+# /chat — LangGraph-powered SSE endpoint
+# ---------------------------------------------------------------------------
+
+_PREDICT_NODES = {"agent", "conversational"}
+
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
     session = STORE.get_or_create(req.session_id)
-    bus = EventBus()
-    bus.bind(asyncio.get_running_loop())
+    s = load_settings()
 
-    def run() -> None:
-        session.bus = bus
-        try:
-            route = classify(req.message)
-            logger.info("router classified %r -> %s", req.message, route)
-            if route == "ANSWER":
-                answer = stream_conversational(
-                    req.message, session.history, bus, session.id
-                )
-                session.history.append({"role": "user", "content": req.message})
-                session.history.append({"role": "assistant", "content": answer})
-                return
+    # Inject history as prior messages so the agent has conversation context.
+    history_msgs: list = []
+    for turn in session.history[-(s.agent.memory_turns * 2):]:
+        if turn["role"] == "user":
+            history_msgs.append(HumanMessage(content=turn["content"]))
+        else:
+            history_msgs.append(AIMessage(content=turn["content"]))
+    history_msgs.append(HumanMessage(content=req.message))
 
-            agent = build_agent(session, bus)
-            result = agent.run(req.message)
-            answer = str(result) if result is not None else ""
-            session.history.append({"role": "user", "content": req.message})
-            session.history.append({"role": "assistant", "content": answer})
-            # step_callback already emits `final` when is_final_answer fires;
-            # this is a safety net for agents that return without that flag.
-            bus.emit("final", {"session_id": session.id, "answer": answer})
-        except Exception as e:
-            logger.exception("agent run failed")
-            bus.emit("error", {"session_id": session.id, "error": str(e)})
-        finally:
-            session.bus = None
+    initial_state = {
+        "messages": history_msgs,
+        "session_id": session.id,
+        "intent": None,
+        "viz_specs": [],
+        "step_count": 0,
+    }
+    config = {
+        "configurable": {"session_id": session.id},
+        "recursion_limit": max(s.agent.max_steps * 3, 20),
+    }
 
-    loop = asyncio.get_running_loop()
-    loop.run_in_executor(None, run)
+    graph = get_graph()
 
     async def event_stream():
-        async for frame in bus.iterator():
-            # sse_starlette accepts dicts with 'event' + 'data' keys. We stringify
-            # the payload here because EventSourceResponse passes data through as-is.
-            yield {"event": frame["event"], "data": json.dumps(frame["data"], default=str)}
+        # State machine for stripping inline <think> blocks from token stream.
+        in_think = False
+        pending_token = ""
+        final_emitted = False
+
+        try:
+            async for event in graph.astream_events(initial_state, config=config, version="v2"):
+                etype = event["event"]
+                node = event.get("metadata", {}).get("langgraph_node", "")
+
+                # --- token streaming ---
+                if etype == "on_chat_model_stream" and node in _PREDICT_NODES:
+                    chunk = event["data"]["chunk"]
+
+                    # reasoning_content (Qwen3 / models with separate thinking field)
+                    reasoning = (getattr(chunk, "additional_kwargs", {}) or {}).get("reasoning_content", "")
+                    if reasoning:
+                        yield _sse("thought", {"text": reasoning})
+
+                    delta = chunk.content or ""
+                    if not delta:
+                        continue
+
+                    pending_token += delta
+                    # Strip <think>...</think> blocks, emit reasoning as thought events.
+                    while pending_token:
+                        if in_think:
+                            end = pending_token.find("</think>")
+                            if end < 0:
+                                pending_token = ""
+                                break
+                            pending_token = pending_token[end + len("</think>"):]
+                            in_think = False
+                        else:
+                            start = pending_token.find("<think>")
+                            if start < 0:
+                                yield _sse("token", {"text": pending_token})
+                                pending_token = ""
+                                break
+                            if start > 0:
+                                yield _sse("token", {"text": pending_token[:start]})
+                            pending_token = pending_token[start + len("<think>"):]
+                            in_think = True
+
+                # --- tool lifecycle ---
+                elif etype == "on_tool_start":
+                    yield _sse("tool_call_start", {
+                        "tool": event["name"],
+                        "input": event["data"].get("input"),
+                    })
+
+                elif etype == "on_tool_end":
+                    output = event["data"].get("output") or {}
+                    yield _sse("tool_call_result", {
+                        "tool": event["name"],
+                        "output": str(output)[:4000],
+                    })
+                    # Surface viz_spec immediately rather than waiting for synthesizer.
+                    if isinstance(output, dict) and output.get("viz_spec"):
+                        yield _sse("viz_spec", output["viz_spec"])
+
+                # --- graph completion ---
+                elif etype == "on_chain_end" and event.get("name") == "LangGraph" and not final_emitted:
+                    output_state = event["data"].get("output") or {}
+                    msgs = output_state.get("messages") or []
+
+                    # Find the last AI message (final answer).
+                    answer = ""
+                    for msg in reversed(msgs):
+                        if getattr(msg, "type", None) == "ai" and msg.content:
+                            answer = msg.content
+                            break
+
+                    # Emit any viz_specs surfaced by synthesizer_node.
+                    for vs in output_state.get("viz_specs") or []:
+                        yield _sse("viz_spec", vs)
+
+                    session.history.append({"role": "user", "content": req.message})
+                    session.history.append({"role": "assistant", "content": answer})
+                    yield _sse("final", {"session_id": session.id, "answer": answer})
+                    final_emitted = True
+
+        except Exception as e:
+            logger.exception("graph run failed for session %s", session.id)
+            yield _sse("error", {"session_id": session.id, "error": str(e)})
+            if not final_emitted:
+                yield _sse("final", {"session_id": session.id, "answer": ""})
 
     return EventSourceResponse(event_stream())
