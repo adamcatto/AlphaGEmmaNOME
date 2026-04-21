@@ -2,6 +2,12 @@
 analyze_gene_tf_binding:
   enabled: true
 
+analyze_gene_expression:
+  enabled: true
+
+analyze_gene_arbitrary_tracks:
+  enabled: true
+
 analyze_region_regulation:
   enabled: true
 

@@ -5,7 +5,7 @@ from smolagents import Tool
 
 from .alphagenome import GetTopTracks, PredictTracks, PredictVariantEffect
 from .genome_lookup import GeneToLocus
-from .macros import AnalyzeGeneTfBinding, AnalyzeRegionRegulation, AnalyzeVariantEffect
+from .macros import AnalyzeGeneTfBinding, AnalyzeGeneExpression, AnalyzeGeneArbitraryTracks, AnalyzeRegionRegulation, AnalyzeVariantEffect
 from .tracks import ListTracksByAssay
 from .uploads import UploadSequence
 from .variants import ParseHgvs
@@ -16,6 +16,8 @@ _ALL: dict[str, type[Tool]] = {
     # Macros — the default agent-facing surface. Each encapsulates a full
     # multi-step workflow so a small LLM only has to pick one tool per question.
     "analyze_gene_tf_binding": AnalyzeGeneTfBinding,
+    "analyze_gene_expression": AnalyzeGeneExpression,
+    "analyze_gene_arbitrary_tracks": AnalyzeGeneArbitraryTracks,
     "analyze_region_regulation": AnalyzeRegionRegulation,
     "analyze_variant_effect": AnalyzeVariantEffect,
     # Uploads still need their own primitive — no macro subsumes them yet.

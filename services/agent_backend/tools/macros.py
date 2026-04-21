@@ -221,6 +221,90 @@ def _filter_by_tissue(
     return hits, None
 
 
+def _rank_expression_tracks(
+    arr: np.ndarray,
+    metadata: list[dict[str, Any]],
+    keywords: list[str] | None,
+    top_k: int,
+    bottom_k: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any], str | None]:
+    """Filter by tissue first, then rank within the filtered set.
+
+    Unlike _rank_tracks + _filter_by_tissue (which filters a globally pre-ranked
+    list), this ensures low expressors within a requested tissue are visible even
+    when they don't make the global top-k. Returns (high, low, stats, note).
+
+    `low` contains the `bottom_k` lowest-signal tracks in ascending order of
+    signal (lowest first). High and low never overlap.
+    """
+    axes = tuple(range(arr.ndim - 1))
+    means = arr.mean(axis=axes)
+
+    idx_to_meta = {m["track_index"]: m for m in metadata}
+    all_tracks: list[dict[str, Any]] = []
+    for i in range(len(means)):
+        track: dict[str, Any] = {"track_index": i, "mean_signal": float(means[i])}
+        meta = idx_to_meta.get(i)
+        if meta:
+            for field in _ANNOTATION_FIELDS:
+                if meta.get(field):
+                    track[field] = meta[field]
+        all_tracks.append(track)
+
+    if not metadata:
+        sorted_all = sorted(all_tracks, key=lambda t: t["mean_signal"], reverse=True)
+        low: list[dict[str, Any]] = []
+        if bottom_k and len(sorted_all) > top_k:
+            low_start = max(top_k, len(sorted_all) - bottom_k)
+            low = list(reversed(sorted_all[low_start:]))
+        return (
+            sorted_all[:top_k],
+            low,
+            {},
+            "Track metadata unavailable; returning top/bottom tracks by signal only.",
+        )
+
+    note: str | None = None
+    if keywords:
+        kw = [k.lower() for k in keywords]
+        filtered = [
+            t for t in all_tracks
+            if any(
+                k in " ".join(str(t.get(f, "") or "") for f in _TISSUE_FIELDS).lower()
+                for k in kw
+            )
+        ]
+        if not filtered:
+            filtered = all_tracks
+            note = (
+                f"No tracks matched tissue keywords {keywords}; "
+                "showing global expression ranking."
+            )
+    else:
+        filtered = all_tracks
+
+    sorted_desc = sorted(filtered, key=lambda t: t["mean_signal"], reverse=True)
+    signals = [t["mean_signal"] for t in sorted_desc]
+
+    high = sorted_desc[:top_k]
+    low = []
+    if bottom_k and len(sorted_desc) > top_k:
+        low_start = max(top_k, len(sorted_desc) - bottom_k)
+        low = list(reversed(sorted_desc[low_start:]))
+
+    stats: dict[str, Any] = {
+        "max": float(signals[0]) if signals else 0.0,
+        "min": float(signals[-1]) if signals else 0.0,
+        "mean": float(np.mean(signals)) if signals else 0.0,
+        "n_tracks": len(sorted_desc),
+    }
+    if high and low:
+        denom = max(low[0]["mean_signal"], 1e-9)
+        stats["high_to_low_ratio"] = round(float(high[0]["mean_signal"] / denom), 2)
+
+    return high, low, stats, note
+
+
 def _stash_viz(session_context: Any, result: dict[str, Any]) -> dict[str, Any]:
     """Copy the result's viz_spec onto the session so the SSE step_callback can
     surface it as its own event. smolagents stringifies tool outputs into
@@ -319,6 +403,242 @@ class AnalyzeGeneTfBinding(SessionAwareTool):
                 "locus": locus,
                 "head": "chip_tf",
                 "track_indices": [t["track_index"] for t in tracks],
+            },
+        })
+
+
+class AnalyzeGeneExpression(SessionAwareTool):
+    name = "analyze_gene_expression"
+    description = (
+        "Find which cell types or tissues express a gene highly or lowly, using "
+        "RNA-seq and CAGE predictions from AlphaGenome. Looks up the gene, runs "
+        "AlphaGenome on a window centered at the gene body, and returns the "
+        "highest- and lowest-expressing cell types within the requested tissue "
+        "group (or globally if no tissue filter is given). Also returns signal "
+        "statistics (max, min, mean, high-to-low ratio) the agent can use to "
+        "interpret expression breadth and specificity. Renders all tracks in the "
+        "UI. Use this for questions like 'what cell types express gene X', "
+        "'is gene X brain-specific', 'where is gene X highly vs lowly expressed'."
+    )
+    inputs = {
+        "gene_symbol": {
+            "type": "string",
+            "description": "HGNC gene symbol, e.g. 'NRXN1', 'GAPDH', 'TP53'.",
+        },
+        "heads": {
+            "type": "array",
+            "description": "Expression heads to query. Default: ['rna_seq', 'cage']. Allowed: 'rna_seq', 'cage', 'procap'.",
+            "nullable": True,
+        },
+        "tissue_keywords": {
+            "type": "array",
+            "description": (
+                "Substrings to restrict tracks to a tissue or cell-type group "
+                "(e.g. ['brain', 'neuron', 'cortex']). When provided, high/low "
+                "rankings are computed within the matched tracks only, so you see "
+                "which cell types within that group express the gene most/least. "
+                "Omit to rank globally across all cell types."
+            ),
+            "nullable": True,
+        },
+        "top_k": {
+            "type": "integer",
+            "description": "Number of highest-expressing cell types to return per head. Default 5.",
+            "nullable": True,
+        },
+        "bottom_k": {
+            "type": "integer",
+            "description": "Number of lowest-expressing cell types to return per head. Default 5. Set to 0 to skip low-expression tracks.",
+            "nullable": True,
+        },
+        "organism": {
+            "type": "string",
+            "description": "'human' or 'mouse'. Default 'human'.",
+            "nullable": True,
+        },
+    }
+    output_type = "object"
+
+    _ALLOWED_HEADS = {"rna_seq", "cage", "procap"}
+
+    def forward(
+        self,
+        gene_symbol: str,
+        heads: list[str] | None = None,
+        tissue_keywords: list[str] | None = None,
+        top_k: int = 5,
+        bottom_k: int = 5,
+        organism: str = "human",
+    ) -> dict[str, Any]:
+        cfg = load_settings().alphagenome
+        heads = [h for h in (heads or ["rna_seq", "cage"]) if h in self._ALLOWED_HEADS] or ["rna_seq", "cage"]
+
+        try:
+            gene = _ensembl_lookup(gene_symbol, organism)
+        except LookupError as e:
+            return {"error": str(e)}
+
+        gene_center = (gene["start"] + gene["end"]) // 2
+        locus = _window_around(gene["chrom"], gene_center, cfg.max_input_length)
+        pred = _predict(locus, None, heads, cfg.default_resolution, organism, self.session_context)
+        decoded = _store_prediction(self.session_context, pred, locus, cfg.default_resolution, organism)
+
+        expression_by_head: dict[str, dict[str, Any]] = {}
+        notes: list[str] = []
+        for head in heads:
+            if head not in decoded:
+                continue
+            metadata = _fetch_head_metadata(head, organism)
+            high, low, stats, note = _rank_expression_tracks(
+                decoded[head], metadata, tissue_keywords, top_k, bottom_k
+            )
+            expression_by_head[head] = {
+                "high_expressing": high,
+                "low_expressing": low,
+                "signal_stats": stats,
+            }
+            if note:
+                notes.append(f"[{head}] {note}")
+
+        primary_head = next((h for h in heads if h in expression_by_head), heads[0])
+        primary = expression_by_head.get(primary_head, {})
+        viz_indices = (
+            [t["track_index"] for t in primary.get("high_expressing", [])]
+            + [t["track_index"] for t in primary.get("low_expressing", [])]
+        )
+
+        return _stash_viz(self.session_context, {
+            "gene": gene,
+            "window": locus,
+            "heads": heads,
+            "expression_by_head": expression_by_head,
+            "notes": notes or None,
+            "viz_spec": {
+                "type": "igv_tracks",
+                "prediction_id": pred["prediction_id"],
+                "locus": locus,
+                "head": primary_head,
+                "track_indices": viz_indices,
+            },
+        })
+
+
+class AnalyzeGeneArbitraryTracks(SessionAwareTool):
+    name = "analyze_gene_arbitrary_tracks"
+    description = (
+        "Analyze any AlphaGenome track type(s) around a gene. Takes a gene symbol, one "
+        "or more AlphaGenome head names, and optional tissue keywords; looks up the gene, "
+        "runs AlphaGenome on a window centered at the gene body, ranks the top (and "
+        "optionally bottom) tracks per head, filters by tissue if requested, and renders "
+        "the result. Use this when the user asks about a specific AlphaGenome head that "
+        "is not covered by the other analysis tools (e.g. 'atac', 'dnase', 'chip_histone', "
+        "'splice_sites'). For expression questions prefer analyze_gene_expression. "
+        "Available heads: atac, dnase, procap, cage, rna_seq, chip_tf, chip_histone, "
+        "splice_sites, splice_junctions, splice_site_usage."
+    )
+    inputs = {
+        "gene_symbol": {
+            "type": "string",
+            "description": "HGNC gene symbol, e.g. 'BRCA1', 'TP53', 'MYC'.",
+        },
+        "heads": {
+            "type": "array",
+            "description": (
+                "One or more AlphaGenome head names to query. Required. "
+                "Allowed: atac, dnase, procap, cage, rna_seq, chip_tf, chip_histone, "
+                "splice_sites, splice_junctions, splice_site_usage."
+            ),
+        },
+        "tissue_keywords": {
+            "type": "array",
+            "description": "Optional substrings to match against track cell type. If omitted, returns top tracks across all tissues.",
+            "nullable": True,
+        },
+        "top_k": {
+            "type": "integer",
+            "description": "Number of highest-signal tracks to return per head. Default 10.",
+            "nullable": True,
+        },
+        "bottom_k": {
+            "type": "integer",
+            "description": "Number of lowest-signal tracks to return per head. Default 0 (omitted). Set >0 to also see low-signal tracks.",
+            "nullable": True,
+        },
+        "organism": {
+            "type": "string",
+            "description": "'human' or 'mouse'. Default 'human'.",
+            "nullable": True,
+        },
+    }
+    output_type = "object"
+
+    _VALID_HEADS = {
+        "atac", "dnase", "procap", "cage", "rna_seq",
+        "chip_tf", "chip_histone", "splice_sites", "splice_junctions", "splice_site_usage",
+    }
+
+    def forward(
+        self,
+        gene_symbol: str,
+        heads: list[str],
+        tissue_keywords: list[str] | None = None,
+        top_k: int = 10,
+        bottom_k: int = 0,
+        organism: str = "human",
+    ) -> dict[str, Any]:
+        cfg = load_settings().alphagenome
+
+        invalid = [h for h in heads if h not in self._VALID_HEADS]
+        if invalid:
+            return {
+                "error": f"Unknown head(s): {invalid}. Valid heads: {sorted(self._VALID_HEADS)}."
+            }
+
+        try:
+            gene = _ensembl_lookup(gene_symbol, organism)
+        except LookupError as e:
+            return {"error": str(e)}
+
+        gene_center = (gene["start"] + gene["end"]) // 2
+        locus = _window_around(gene["chrom"], gene_center, cfg.max_input_length)
+        pred = _predict(locus, None, heads, cfg.default_resolution, organism, self.session_context)
+        decoded = _store_prediction(self.session_context, pred, locus, cfg.default_resolution, organism)
+
+        by_head: dict[str, dict[str, Any]] = {}
+        notes: list[str] = []
+        for head in heads:
+            if head not in decoded:
+                continue
+            metadata = _fetch_head_metadata(head, organism)
+            high, low, stats, note = _rank_expression_tracks(
+                decoded[head], metadata, tissue_keywords, top_k, bottom_k
+            )
+            entry: dict[str, Any] = {"top_tracks": high, "signal_stats": stats}
+            if low:
+                entry["low_tracks"] = low
+            by_head[head] = entry
+            if note:
+                notes.append(f"[{head}] {note}")
+
+        primary_head = next((h for h in heads if h in by_head), heads[0])
+        primary = by_head.get(primary_head, {})
+        viz_indices = (
+            [t["track_index"] for t in primary.get("top_tracks", [])]
+            + [t["track_index"] for t in primary.get("low_tracks", [])]
+        )
+
+        return _stash_viz(self.session_context, {
+            "gene": gene,
+            "window": locus,
+            "heads": heads,
+            "tracks_by_head": by_head,
+            "notes": notes or None,
+            "viz_spec": {
+                "type": "igv_tracks",
+                "prediction_id": pred["prediction_id"],
+                "locus": locus,
+                "head": primary_head,
+                "track_indices": viz_indices,
             },
         })
 
