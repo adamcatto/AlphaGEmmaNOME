@@ -714,6 +714,239 @@ class AnalyzeRegionRegulation(SessionAwareTool):
         })
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 — Public API knowledge macros
+# ---------------------------------------------------------------------------
+
+
+class AnalyzeVariantClinical(SessionAwareTool):
+    name = "analyze_variant_clinical"
+    description = (
+        "Comprehensive clinical analysis of variants in a gene. Queries ClinVar for "
+        "pathogenicity classifications, gnomAD for population allele frequencies and "
+        "gene-level constraint scores (pLI, LOEUF), and optionally runs AlphaGenome "
+        "variant-effect prediction. Use for 'what pathogenic variants are in gene X' "
+        "or 'is gene X under evolutionary constraint' questions."
+    )
+    inputs = {
+        "gene_symbol": {
+            "type": "string",
+            "description": "HGNC gene symbol, e.g. 'BRCA1', 'TP53'.",
+        },
+        "variant_hgvs": {
+            "type": "string",
+            "description": "Optional HGVS string for a specific variant to score with AlphaGenome (e.g. 'chr17:g.43044295A>G').",
+            "nullable": True,
+        },
+        "clinical_significance": {
+            "type": "string",
+            "description": "Filter ClinVar by significance (e.g. 'pathogenic'). Optional.",
+            "nullable": True,
+        },
+        "organism": {
+            "type": "string",
+            "description": "'human' or 'mouse'. Default 'human'.",
+            "nullable": True,
+        },
+    }
+    output_type = "object"
+
+    def forward(
+        self,
+        gene_symbol: str,
+        variant_hgvs: str | None = None,
+        clinical_significance: str | None = None,
+        organism: str = "human",
+    ) -> dict[str, Any]:
+        from .clinvar import QueryClinvar
+        from .gnomad import QueryGnomad
+
+        clinvar_result = QueryClinvar(session_context=self.session_context).forward(
+            gene_symbol=gene_symbol,
+            clinical_significance=clinical_significance,
+        )
+        gnomad_result = QueryGnomad(session_context=self.session_context).forward(
+            gene_symbol=gene_symbol,
+        )
+
+        result: dict[str, Any] = {
+            "gene_symbol": gene_symbol,
+            "clinvar": clinvar_result,
+            "gnomad": gnomad_result,
+        }
+
+        if variant_hgvs:
+            ag_result = AnalyzeVariantEffect(session_context=self.session_context).forward(
+                variant_hgvs=variant_hgvs,
+                organism=organism,
+            )
+            result["alphagenome_variant_effect"] = ag_result
+
+        pathogenic_count = clinvar_result.get("pathogenic_count", 0)
+        pLI = (gnomad_result.get("constraint") or {}).get("pLI")
+        loeuf = (gnomad_result.get("constraint") or {}).get("loeuf")
+        constraint_str = ""
+        if pLI is not None:
+            constraint_str = f"pLI={pLI:.2f}"
+        if loeuf is not None:
+            constraint_str += f", LOEUF={loeuf:.2f}" if constraint_str else f"LOEUF={loeuf:.2f}"
+        result["summary"] = (
+            f"{gene_symbol}: {pathogenic_count} pathogenic/likely-pathogenic ClinVar entries. "
+            + (f"gnomAD constraint: {constraint_str}." if constraint_str else "")
+            + (" " + gnomad_result.get("interpretation", "") if gnomad_result.get("interpretation") else "")
+        ).strip()
+
+        return result
+
+
+class AnalyzeGwasAssociations(SessionAwareTool):
+    name = "analyze_gwas_associations"
+    description = (
+        "Find GWAS Catalog trait associations for a gene. Returns diseases and phenotypes "
+        "associated with variants near the gene, with p-values and risk alleles. Use when "
+        "the user asks about disease associations, GWAS hits, or which traits are linked to "
+        "a gene or genomic region."
+    )
+    inputs = {
+        "gene_symbol": {
+            "type": "string",
+            "description": "HGNC gene symbol, e.g. 'TCF7L2', 'FTO', 'APOE'.",
+        },
+        "max_results": {
+            "type": "integer",
+            "description": "Maximum number of associations to retrieve (default 30).",
+            "nullable": True,
+        },
+    }
+    output_type = "object"
+
+    def forward(self, gene_symbol: str, max_results: int = 30) -> dict[str, Any]:
+        from .gwas import QueryGwasCatalog
+
+        gwas_result = QueryGwasCatalog(session_context=self.session_context).forward(
+            gene_symbol=gene_symbol,
+            max_results=max_results,
+        )
+
+        top_traits = gwas_result.get("top_traits", [])
+        trait_summary = (
+            "Top associated traits: " + "; ".join(f"{t['trait']} (n={t['association_count']})" for t in top_traits[:5])
+            if top_traits else "No GWAS associations found."
+        )
+        return {
+            "gene_symbol": gene_symbol,
+            "gwas": gwas_result,
+            "summary": f"{gene_symbol} GWAS summary — {trait_summary}",
+        }
+
+
+class AnalyzeKnownRegulatoryElements(SessionAwareTool):
+    name = "analyze_known_regulatory_elements"
+    description = (
+        "Combine ENCODE cCRE annotations with AlphaGenome chromatin predictions for a "
+        "genomic region. Returns known regulatory elements (promoters, enhancers, CTCF sites) "
+        "alongside predicted accessibility and histone mark profiles. Use when the user asks "
+        "what regulatory elements are known in a region, or wants experimental + predicted "
+        "chromatin data together."
+    )
+    inputs = {
+        "locus": {
+            "type": "string",
+            "description": "Genomic locus 'chrN:start-end', e.g. 'chr17:43044295-43125483'.",
+        },
+        "organism": {
+            "type": "string",
+            "description": "'human' or 'mouse'. Default 'human'.",
+            "nullable": True,
+        },
+        "include_alphagenome": {
+            "type": "boolean",
+            "description": "Whether to also run AlphaGenome chromatin prediction. Default true.",
+            "nullable": True,
+        },
+    }
+    output_type = "object"
+
+    def forward(
+        self,
+        locus: str,
+        organism: str = "human",
+        include_alphagenome: bool = True,
+    ) -> dict[str, Any]:
+        from .encode import QueryEncodeElements
+
+        encode_result = QueryEncodeElements(session_context=self.session_context).forward(
+            locus=locus,
+            organism=organism,
+        )
+
+        result: dict[str, Any] = {
+            "locus": locus,
+            "organism": organism,
+            "encode_ccres": encode_result,
+        }
+
+        if include_alphagenome:
+            ag_result = AnalyzeRegionRegulation(session_context=self.session_context).forward(
+                locus=locus,
+                organism=organism,
+            )
+            result["alphagenome_chromatin"] = ag_result
+            if "viz_spec" in ag_result:
+                result["viz_spec"] = ag_result["viz_spec"]
+
+        n_elements = encode_result.get("total_elements", 0)
+        class_summary = encode_result.get("class_summary", {})
+        class_str = "; ".join(f"{k}: {v}" for k, v in class_summary.items()) if class_summary else "no elements"
+        result["summary"] = (
+            f"Found {n_elements} ENCODE cCREs in {locus} ({class_str}). "
+            + (encode_result.get("summary", "") if not class_summary else "")
+        ).strip()
+        return _stash_viz(self.session_context, result)
+
+
+class AnalyzeGtexExpression(SessionAwareTool):
+    name = "analyze_gtex_expression"
+    description = (
+        "Query GTEx for experimental RNA-seq expression of a gene across human tissues. "
+        "Returns median TPM per tissue, highest and lowest expressing tissues, and eQTL "
+        "summary. Use when the user asks about tissue expression from experimental data "
+        "(as opposed to AlphaGenome-predicted expression). Complements analyze_gene_expression "
+        "which uses AlphaGenome predictions."
+    )
+    inputs = {
+        "gene_symbol": {
+            "type": "string",
+            "description": "HGNC gene symbol, e.g. 'TP53', 'NRXN1', 'ACTB'.",
+        },
+        "tissue_keywords": {
+            "type": "array",
+            "description": "Optional tissue substrings to filter results (e.g. ['brain', 'neuron']).",
+            "nullable": True,
+        },
+        "top_k": {
+            "type": "integer",
+            "description": "Number of highest/lowest expressing tissues to highlight (default 5).",
+            "nullable": True,
+        },
+    }
+    output_type = "object"
+
+    def forward(
+        self,
+        gene_symbol: str,
+        tissue_keywords: list[str] | None = None,
+        top_k: int = 5,
+    ) -> dict[str, Any]:
+        from .gtex import QueryGtexExpression as _QueryGtex
+
+        return _QueryGtex(session_context=self.session_context).forward(
+            gene_symbol=gene_symbol,
+            tissue_keywords=tissue_keywords,
+            top_k=top_k,
+        )
+
+
 class AnalyzeVariantEffect(SessionAwareTool):
     name = "analyze_variant_effect"
     description = (

@@ -42,18 +42,37 @@ render_panel:
 parse_hgvs:
   enabled: false
 
-# Planned stubs — not yet implemented.
-ensembl_regulatory_build:
+# Phase 2 macros — high-level public-API wrappers (enabled by default).
+analyze_variant_clinical:
+  enabled: true
+
+analyze_gwas_associations:
+  enabled: true
+
+analyze_known_regulatory_elements:
+  enabled: true
+
+analyze_gtex_expression:
+  enabled: true
+
+# Phase 2 primitives — disabled by default; enable for power-user flows.
+query_clinvar:
   enabled: false
 
-jaspar_motif_scan:
+query_gnomad:
   enabled: false
 
-gtex_expression:
+query_gwas_catalog:
   enabled: false
 
-conservation_score:
+query_encode_elements:
   enabled: false
 
-clinvar_lookup:
+query_gtex_expression:
+  enabled: false
+
+query_conservation:
+  enabled: false
+
+scan_jaspar_motifs:
   enabled: false

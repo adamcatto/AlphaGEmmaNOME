@@ -115,6 +115,75 @@ class ParseHgvsInput(BaseModel):
     hgvs: str = Field(description="HGVS string like 'chr17:g.43044295A>G'.")
 
 
+# Phase 2 schemas
+
+class QueryClinvarInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'BRCA1', 'TP53'.")
+    max_results: int = Field(20, description="Maximum number of variants to return.")
+    clinical_significance: str | None = Field(None, description="Filter by significance: 'pathogenic', 'likely_pathogenic', 'benign', etc.")
+
+
+class QueryGnomadInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'BRCA1'.")
+    reference_genome: str = Field("GRCh38", description="'GRCh38' or 'GRCh37'.")
+    include_clinvar_variants: bool = Field(True, description="Whether to include ClinVar variants.")
+
+
+class QueryGwasCatalogInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'TCF7L2', 'APOE'.")
+    max_results: int = Field(25, description="Max number of associations to return.")
+
+
+class QueryEncodeElementsInput(BaseModel):
+    locus: str = Field(description="Genomic locus 'chrN:start-end', e.g. 'chr17:43044295-43125483'.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+    max_results: int = Field(50, description="Max elements to return.")
+
+
+class QueryGtexExpressionInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'TP53', 'BRCA1'.")
+    tissue_keywords: list[str] | None = Field(None, description="Optional tissue substrings to filter (e.g. ['brain', 'liver']).")
+    dataset_id: str = Field("gtex_v8", description="GTEx dataset ID.")
+    top_k: int = Field(5, description="Number of highest/lowest expressing tissues to highlight.")
+
+
+class QueryConservationInput(BaseModel):
+    locus: str = Field(description="Genomic locus 'chrN:start-end', e.g. 'chr17:43044295-43125483'.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+    include_per_base: bool = Field(False, description="Whether to include per-base score arrays.")
+
+
+class ScanJasparMotifsInput(BaseModel):
+    sequence: str = Field(description="DNA sequence to scan (A/C/G/T/N). Recommended length: 100–2000 bp.")
+    tf_names: list[str] | None = Field(None, description="Optional list of specific TF names to restrict to (e.g. ['CTCF', 'SP1']).")
+    threshold: float = Field(0.80, description="Relative score threshold 0–1.")
+    tax_group: str = Field("vertebrates", description="Taxonomic group: 'vertebrates', 'insects', 'plants', etc.")
+
+
+class AnalyzeVariantClinicalInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'BRCA1', 'TP53'.")
+    variant_hgvs: str | None = Field(None, description="Optional HGVS string for a specific variant to score with AlphaGenome.")
+    clinical_significance: str | None = Field(None, description="Filter ClinVar by significance (e.g. 'pathogenic').")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+
+
+class AnalyzeGwasAssociationsInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'TCF7L2', 'FTO', 'APOE'.")
+    max_results: int = Field(30, description="Maximum number of associations to retrieve.")
+
+
+class AnalyzeKnownRegulatoryElementsInput(BaseModel):
+    locus: str = Field(description="Genomic locus 'chrN:start-end'.")
+    organism: str = Field("human", description="'human' or 'mouse'.")
+    include_alphagenome: bool = Field(True, description="Whether to also run AlphaGenome chromatin prediction.")
+
+
+class AnalyzeGtexExpressionMacroInput(BaseModel):
+    gene_symbol: str = Field(description="HGNC gene symbol, e.g. 'TP53', 'NRXN1', 'ACTB'.")
+    tissue_keywords: list[str] | None = Field(None, description="Optional tissue substrings to filter results (e.g. ['brain', 'neuron']).")
+    top_k: int = Field(5, description="Number of highest/lowest expressing tissues to highlight.")
+
+
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
@@ -152,12 +221,23 @@ def make_tool(
 def build_tool_list() -> list[StructuredTool]:
     """Return LangChain StructuredTools for every tool enabled in tools.yaml."""
     from .alphagenome import GetTopTracks, PredictTracks, PredictVariantEffect
+    from .clinvar import QueryClinvar
+    from .conservation import QueryConservation
+    from .encode import QueryEncodeElements
     from .genome_lookup import GeneToLocus
+    from .gnomad import QueryGnomad
+    from .gtex import QueryGtexExpression
+    from .gwas import QueryGwasCatalog
+    from .jaspar import ScanJasparMotifs
     from .macros import (
         AnalyzeGeneArbitraryTracks,
         AnalyzeGeneExpression,
         AnalyzeGeneTfBinding,
+        AnalyzeGtexExpression,
+        AnalyzeGwasAssociations,
+        AnalyzeKnownRegulatoryElements,
         AnalyzeRegionRegulation,
+        AnalyzeVariantClinical,
         AnalyzeVariantEffect,
     )
     from .tracks import ListTracksByAssay
@@ -166,12 +246,19 @@ def build_tool_list() -> list[StructuredTool]:
     from .viz import RenderPanel
 
     _ALL: list[tuple[type, str, type[BaseModel]]] = [
+        # --- Macros (enabled by default) ---
         (AnalyzeGeneTfBinding, "analyze_gene_tf_binding", AnalyzeGeneTfBindingInput),
         (AnalyzeGeneExpression, "analyze_gene_expression", AnalyzeGeneExpressionInput),
         (AnalyzeGeneArbitraryTracks, "analyze_gene_arbitrary_tracks", AnalyzeGeneArbitraryTracksInput),
         (AnalyzeRegionRegulation, "analyze_region_regulation", AnalyzeRegionRegulationInput),
         (AnalyzeVariantEffect, "analyze_variant_effect", AnalyzeVariantEffectInput),
         (UploadSequence, "upload_sequence", UploadSequenceInput),
+        # Phase 2 macros
+        (AnalyzeVariantClinical, "analyze_variant_clinical", AnalyzeVariantClinicalInput),
+        (AnalyzeGwasAssociations, "analyze_gwas_associations", AnalyzeGwasAssociationsInput),
+        (AnalyzeKnownRegulatoryElements, "analyze_known_regulatory_elements", AnalyzeKnownRegulatoryElementsInput),
+        (AnalyzeGtexExpression, "analyze_gtex_expression", AnalyzeGtexExpressionMacroInput),
+        # --- Primitives (disabled by default) ---
         (GeneToLocus, "gene_to_locus", GeneToLocusInput),
         (PredictTracks, "predict_tracks", PredictTracksInput),
         (PredictVariantEffect, "predict_variant_effect", PredictVariantEffectInput),
@@ -179,6 +266,14 @@ def build_tool_list() -> list[StructuredTool]:
         (ListTracksByAssay, "list_tracks_by_assay", ListTracksByAssayInput),
         (RenderPanel, "render_panel", RenderPanelInput),
         (ParseHgvs, "parse_hgvs", ParseHgvsInput),
+        # Phase 2 primitives
+        (QueryClinvar, "query_clinvar", QueryClinvarInput),
+        (QueryGnomad, "query_gnomad", QueryGnomadInput),
+        (QueryGwasCatalog, "query_gwas_catalog", QueryGwasCatalogInput),
+        (QueryEncodeElements, "query_encode_elements", QueryEncodeElementsInput),
+        (QueryGtexExpression, "query_gtex_expression", QueryGtexExpressionInput),
+        (QueryConservation, "query_conservation", QueryConservationInput),
+        (ScanJasparMotifs, "scan_jaspar_motifs", ScanJasparMotifsInput),
     ]
 
     cfg = load_settings().tools
