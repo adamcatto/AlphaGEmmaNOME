@@ -31,6 +31,43 @@ def _load_prompts() -> tuple[str, str]:
     return system, "\n".join(fs_lines)
 
 
+def _format_history_for_context(
+    history: list[dict],
+    max_turns: int,
+    max_chars: int,
+) -> str:
+    """Return a compact recent-conversation block for the system prompt.
+
+    Walks history in reverse so the most recent turns are always included;
+    stops when the char budget is exhausted or max_turns user/assistant pairs
+    have been collected.  Returns an empty string when there is no history.
+    """
+    if not history:
+        return ""
+    lines: list[str] = []
+    chars = 0
+    pairs = 0
+    for turn in reversed(history):
+        label = "User" if turn["role"] == "user" else "Assistant"
+        line = f"{label}: {turn['content']}"
+        if chars + len(line) > max_chars:
+            break
+        lines.append(line)
+        chars += len(line)
+        if turn["role"] == "user":
+            pairs += 1
+        if pairs >= max_turns:
+            break
+    if not lines:
+        return ""
+    block = "\n".join(reversed(lines))
+    return (
+        "**Recent conversation (for context only — do not repeat these findings "
+        "unless the user explicitly asks):**\n"
+        f"{block}\n\n"
+    )
+
+
 def build_agent(session: Session, bus: EventBus) -> ToolCallingAgent:
     s = load_settings()
     model = build_llm()
@@ -81,9 +118,16 @@ def build_agent(session: Session, bus: EventBus) -> ToolCallingAgent:
         step_callbacks=[step_callback],
     )
 
+    history_block = _format_history_for_context(
+        session.history,
+        max_turns=s.agent.memory_turns,
+        max_chars=s.agent.memory_max_chars,
+    )
     base = agent.prompt_templates.get("system_prompt", "")
     agent.prompt_templates["system_prompt"] = (
-        f"{system_prompt}\n\n---\nExamples:\n{few_shot}\n\n---\n{base}"
+        f"{system_prompt}\n\n---\nExamples:\n{few_shot}\n\n"
+        f"---\n{history_block}"
+        f"---\n{base}"
     )
 
     return agent

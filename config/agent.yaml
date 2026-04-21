@@ -2,3 +2,5 @@ max_steps: 6
 agent_type: tool_calling
 retry_on_parse_error: 2
 verbose: true
+memory_turns: 4
+memory_max_chars: 1200

@@ -88,6 +88,8 @@ class AgentConfig(BaseModel):
     agent_type: Literal["tool_calling", "code"] = "tool_calling"
     retry_on_parse_error: int = 2
     verbose: bool = True
+    memory_turns: int = 4
+    memory_max_chars: int = 1200
 
 
 class ToolToggle(BaseModel):
