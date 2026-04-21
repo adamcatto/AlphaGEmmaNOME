@@ -1,0 +1,10 @@
+service_url: http://localhost:8001
+default_heads:
+  - rna_seq
+  - chip_tf
+  - atac
+default_resolution: 128bp
+max_input_length: 131072
+device: cpu
+batch_size: 1
+dtype: float16

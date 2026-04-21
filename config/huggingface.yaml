@@ -1,0 +1,3 @@
+cache_dir: ~/.cache/huggingface
+token_env_var: HUGGINGFACE_HUB_TOKEN
+offline: false

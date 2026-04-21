@@ -1,0 +1,35 @@
+[project]
+name = "omnigemmanome"
+version = "0.0.1"
+description = "Functional-genomics chat app: Gemma-2B (Ollama) + smolagents + alphagenome-pytorch"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "omnigemmanome-config",
+    "omnigemmanome-alphagenome-svc",
+    "omnigemmanome-agent-backend",
+    "uvicorn>=0.44.0",
+]
+
+[tool.uv.sources]
+omnigemmanome-config = { workspace = true }
+omnigemmanome-alphagenome-svc = { workspace = true }
+omnigemmanome-agent-backend = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "config",
+    "services/alphagenome_svc",
+    "services/agent_backend",
+]
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "pymdown-extensions>=10.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

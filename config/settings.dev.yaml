@@ -1,0 +1,11 @@
+server:
+  cors_origins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+    - http://10.81.105.76:5173
+    - http://10.81.105.76:5174
+
+limits:
+  # AlphaGenome's input size is fixed at 131072 — smaller inputs won't pass
+  # the model's shape checks, so this cap is the model cap (not a dev knob).
+  max_sequence_length: 131072

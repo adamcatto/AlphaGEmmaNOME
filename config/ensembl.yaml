@@ -1,0 +1,4 @@
+rest_base_url: https://rest.ensembl.org
+assembly: GRCh38
+request_timeout_seconds: 15
+rate_limit_per_second: 10

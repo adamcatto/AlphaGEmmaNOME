@@ -1,0 +1,23 @@
+[
+  {
+    "user": "Where around the human gene ASPM do transcription factors typically bind in the brain?",
+    "trace": [
+      {"tool": "analyze_gene_tf_binding", "args": {"gene_symbol": "ASPM", "tissue_keywords": ["brain", "cortex", "neural"], "organism": "human"}}
+    ],
+    "final": "AlphaGenome predicts the strongest TF binding around ASPM (chr1 TSS ±65 kb) at track 1204 (mean 0.74) and track 881 (mean 0.61); both are annotated brain/neural ChIP samples. The IGV panel on the right shows the top 10 CTCF/NEUROG/REST-class tracks in that window."
+  },
+  {
+    "user": "What regulatory elements does AlphaGenome see at chr17:43044295-43175000?",
+    "trace": [
+      {"tool": "analyze_region_regulation", "args": {"locus": "chr17:43044295-43175000", "heads": ["atac", "dnase", "chip_histone"]}}
+    ],
+    "final": "Top ATAC tracks (112, 44) show accessibility peaks at the 5′ end of the window; chip_histone track 309 (H3K27ac-class) marks the same region as active. The IGV panel on the right renders the top 5 tracks per head."
+  },
+  {
+    "user": "What is the effect of chr17:g.43044295A>G on chromatin accessibility?",
+    "trace": [
+      {"tool": "analyze_variant_effect", "args": {"variant_hgvs": "chr17:g.43044295A>G", "heads": ["atac", "chip_tf"]}}
+    ],
+    "final": "The A>G substitution produces an L2 delta of 2.3 on ATAC (max |Δ| 0.41 at track 112) and 1.7 on chip_tf (top-affected track 884). The variant-delta panel on the right visualizes the per-track change around the variant."
+  }
+]

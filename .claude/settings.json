@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof -p 608471 -i:8000)",
+      "Bash(.venv/bin/python -m pip list)",
+      "Bash(.venv/bin/python -c ' *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

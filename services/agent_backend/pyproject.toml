@@ -1,0 +1,27 @@
+[project]
+name = "omnigemmanome-agent-backend"
+version = "0.0.1"
+requires-python = ">=3.11"
+dependencies = [
+    "omnigemmanome-config",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "sse-starlette>=2.1",
+    "pydantic>=2.7",
+    "smolagents[litellm]>=1.9",
+    "litellm>=1.40",
+    "httpx>=0.27",
+    "numpy>=1.26",
+    "python-multipart>=0.0.9",
+]
+
+[tool.uv.sources]
+omnigemmanome-config = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+include = ["*.py", "tools/*.py", "prompts/*"]

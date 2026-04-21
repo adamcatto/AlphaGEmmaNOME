@@ -1,0 +1,12 @@
+huggingface:
+  alphagenome:
+    repo_id: gtca/alphagenome_pytorch
+    filename: model_all_folds.safetensors
+    revision: main
+
+ollama:
+  model: gemma4:e4b
+
+organism_index:
+  human: 0
+  mouse: 1

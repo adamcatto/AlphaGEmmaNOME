@@ -1,0 +1,8 @@
+base_url: http://localhost:11434
+# Qwen3 emits a <think>...</think> reasoning block before its response and is
+# trained to decide when the agent loop is done. The 4B variant balances
+# thinking quality with latency; bump to qwen3:8b for harder tasks if RAM allows.
+model: gemma4:e4b
+temperature: 0.1
+max_tokens: 4096
+request_timeout_seconds: 240

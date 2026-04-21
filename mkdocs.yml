@@ -1,0 +1,90 @@
+site_name: OmniGemmaNome
+site_description: Functional-genomics chat app — docs
+docs_dir: documentation
+site_dir: .site
+
+# Preserve .md-as-.html mapping so intra-doc relative links like
+# `tutorials/01-gene-tf-binding.md` resolve correctly after build.
+use_directory_urls: false
+
+# Cross-references into source (../../services/*.py, ../config/*.yaml, ...) are
+# intentional — they point at real code and click-through from a docs viewer
+# backed by a repo browser (GitHub Pages) still works. Demote to info so they
+# don't spam the console and don't fail --strict builds.
+validation:
+  links:
+    not_found: info
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - content.tabs.link
+    - search.highlight
+    - search.share
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to light
+
+nav:
+  - Home: README.md
+  - Getting started: getting-started.md
+  - Reference:
+      - Architecture: architecture.md
+      - Configuration: configuration.md
+      - HTTP API: api-reference.md
+      - SSE protocol: sse-protocol.md
+      - Agent tools: agent-tools.md
+      - Frontend: frontend.md
+      - Data model: data-model.md
+      - Operations: operations.md
+  - Tutorials:
+      - 1. TF binding near a gene: tutorials/01-gene-tf-binding.md
+      - 2. Region regulation: tutorials/02-region-regulation.md
+      - 3. Variant effect: tutorials/03-variant-effect.md
+      - 4. Upload a sequence: tutorials/04-upload-sequence.md
+      - 5. Add a new tool: tutorials/05-adding-a-tool.md
+      - 6. Direct API usage: tutorials/06-direct-api-usage.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+plugins:
+  - search

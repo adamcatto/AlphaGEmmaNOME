@@ -1,0 +1,7 @@
+genome_fasta: services/alphagenome_svc/data/hg38.fa
+genome_fai: services/alphagenome_svc/data/hg38.fa.fai
+alphagenome_weights: services/alphagenome_svc/data/model_all_folds.safetensors
+track_metadata_tsv: services/alphagenome_svc/data/track_metadata.tsv
+upload_dir: services/alphagenome_svc/data/uploads
+session_store_dir: .sessions
+prompts_dir: services/agent_backend/prompts

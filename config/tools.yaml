@@ -1,0 +1,53 @@
+# Macros: the default surface. One tool per canonical question.
+analyze_gene_tf_binding:
+  enabled: true
+
+analyze_region_regulation:
+  enabled: true
+
+analyze_variant_effect:
+  enabled: true
+
+upload_sequence:
+  enabled: true
+
+# Primitives: chainable low-level tools. OFF by default — small LLMs cannot
+# plan reliable multi-step chains, and enabling them triggers cascades like
+# gene_to_locus → predict_tracks (wrong window) → list_tracks_by_assay loop.
+# Re-enable only for power-user flows with a stronger model.
+gene_to_locus:
+  enabled: false
+
+predict_tracks:
+  enabled: false
+
+predict_variant_effect:
+  enabled: false
+
+list_tracks_by_assay:
+  enabled: false
+
+get_top_tracks:
+  enabled: false
+
+render_panel:
+  enabled: false
+
+parse_hgvs:
+  enabled: false
+
+# Planned stubs — not yet implemented.
+ensembl_regulatory_build:
+  enabled: false
+
+jaspar_motif_scan:
+  enabled: false
+
+gtex_expression:
+  enabled: false
+
+conservation_score:
+  enabled: false
+
+clinvar_lookup:
+  enabled: false

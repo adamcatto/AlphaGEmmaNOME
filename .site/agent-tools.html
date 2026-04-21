@@ -1,0 +1,1758 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Functional-genomics chat app — docs">
+      
+      
+      
+      
+        <link rel="prev" href="sse-protocol.html">
+      
+      
+        <link rel="next" href="frontend.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Agent tools - OmniGemmaNome</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#agent-tool-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="OmniGemmaNome" class="md-header__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OmniGemmaNome
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Agent tools
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="index.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="getting-started.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="architecture.html" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="tutorials/01-gene-tf-binding.html" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="OmniGemmaNome" class="md-nav__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OmniGemmaNome
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="getting-started.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api-reference.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sse-protocol.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSE protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent tools
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="agent-tools.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#routing-rules-system-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routing rules (system prompt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#macros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Macros
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Macros">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analyze_gene_tf_binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze_gene_tf_binding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze_region_regulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze_region_regulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze_variant_effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze_variant_effect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload_sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        upload_sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primitives-disabled-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primitives (disabled by default)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Primitives (disabled by default)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene_to_locus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gene_to_locus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict_tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        predict_tracks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict_variant_effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        predict_variant_effect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list_tracks_by_assay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_tracks_by_assay
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_top_tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_top_tracks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render_panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        render_panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_hgvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_hgvs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planned-stubs-neither-class-nor-wiring-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned stubs (neither class nor wiring exist)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#side-effects-on-the-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side-effects on the session
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-progress-events-to-a-custom-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding progress events to a custom tool
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="frontend.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="data-model.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="operations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/01-gene-tf-binding.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. TF binding near a gene
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/02-region-regulation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. Region regulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/03-variant-effect.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. Variant effect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/04-upload-sequence.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Upload a sequence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/05-adding-a-tool.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Add a new tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/06-direct-api-usage.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Direct API usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#routing-rules-system-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routing rules (system prompt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#macros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Macros
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Macros">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analyze_gene_tf_binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze_gene_tf_binding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze_region_regulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze_region_regulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze_variant_effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze_variant_effect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload_sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        upload_sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primitives-disabled-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primitives (disabled by default)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Primitives (disabled by default)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene_to_locus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gene_to_locus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict_tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        predict_tracks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict_variant_effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        predict_variant_effect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list_tracks_by_assay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_tracks_by_assay
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_top_tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_top_tracks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render_panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        render_panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_hgvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_hgvs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planned-stubs-neither-class-nor-wiring-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned stubs (neither class nor wiring exist)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#side-effects-on-the-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side-effects on the session
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-progress-events-to-a-custom-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding progress events to a custom tool
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="agent-tool-reference">Agent Tool Reference<a class="headerlink" href="#agent-tool-reference" title="Permanent link">&para;</a></h1>
+<p>The agent backend exposes a suite of tools to the LLM via <a href="https://github.com/huggingface/smolagents">smolagents</a>. Two tiers:</p>
+<ul>
+<li><strong>Macros</strong> — one tool = one full pipeline. The agent only has to pick one per question. Default-enabled in <a href="../config/tools.yaml">config/tools.yaml</a>.</li>
+<li><strong>Primitives</strong> — chainable building blocks. Default-disabled because a small LLM cannot plan multi-step chains reliably; enable them only with a stronger model.</li>
+</ul>
+<p>All tools live in <a href="../services/agent_backend/tools/">services/agent_backend/tools/</a> and are registered in <a href="../services/agent_backend/tools/__init__.py">tools/<strong>init</strong>.py</a>. Each tool subclasses <code>smolagents.Tool</code> and is constructed with <code>session_context</code> (the current <code>Session</code>).</p>
+<h2 id="routing-rules-system-prompt">Routing rules (system prompt)<a class="headerlink" href="#routing-rules-system-prompt" title="Permanent link">&para;</a></h2>
+<p><a href="../services/agent_backend/prompts/system.md">prompts/system.md</a> tells the LLM:</p>
+<table>
+<thead>
+<tr>
+<th>User asks about…</th>
+<th>Call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TF binding near a gene (± tissue)</td>
+<td><code>analyze_gene_tf_binding</code></td>
+</tr>
+<tr>
+<td>Regulatory state of a locus <code>chrN:start-end</code></td>
+<td><code>analyze_region_regulation</code></td>
+</tr>
+<tr>
+<td>Effect of a variant <code>chrN:g.POSREF&gt;ALT</code></td>
+<td><code>analyze_variant_effect</code></td>
+</tr>
+<tr>
+<td>A user-uploaded sequence</td>
+<td><code>upload_sequence</code></td>
+</tr>
+</tbody>
+</table>
+<p>Rules enforced in the prompt:</p>
+<ol>
+<li><strong>One workflow tool per question.</strong> Either <code>final_answer</code> directly (for knowledge questions) or one macro, then <code>final_answer</code>.</li>
+<li><strong>Every turn is a tool call.</strong> Free-form prose is forbidden — the model calls <code>final_answer(answer="...")</code> for any user-facing text.</li>
+<li><strong>Pass tissue keywords when relevant.</strong> If the user mentions "brain", pass <code>tissue_keywords=["brain","cortex",...]</code>.</li>
+<li><strong>Cite the numbers from the tool output.</strong> Track indices, mean signals, deltas, <code>target_label</code> (TF name), loci — all must come from the observation, not be invented.</li>
+</ol>
+<hr />
+<h2 id="macros">Macros<a class="headerlink" href="#macros" title="Permanent link">&para;</a></h2>
+<h3 id="analyze_gene_tf_binding"><code>analyze_gene_tf_binding</code><a class="headerlink" href="#analyze_gene_tf_binding" title="Permanent link">&para;</a></h3>
+<p>Find transcription-factor binding predictions around a gene.</p>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/macros.py#L255-L323">macros.py:255-323</a></p>
+<p><strong>Inputs</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gene_symbol</code></td>
+<td>string</td>
+<td>—</td>
+<td>HGNC symbol (e.g. <code>ASPM</code>, <code>BRCA1</code>)</td>
+</tr>
+<tr>
+<td><code>tissue_keywords</code></td>
+<td>list\&lt;string&gt;</td>
+<td>null</td>
+<td>Tissue substrings to filter tracks (<code>["brain","cortex","neural"]</code>)</td>
+</tr>
+<tr>
+<td><code>top_k</code></td>
+<td>int</td>
+<td>10</td>
+<td>Number of top tracks to return after filtering</td>
+</tr>
+<tr>
+<td><code>organism</code></td>
+<td>string</td>
+<td><code>"human"</code></td>
+<td><code>"human"</code> or <code>"mouse"</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline</strong>:</p>
+<ol>
+<li><code>_ensembl_lookup(gene_symbol, organism)</code> → <code>{chrom, start, end, strand, tss}</code>.</li>
+<li><code>gene_center = (start + end) // 2</code>. The window is centered on the gene midpoint, <strong>not</strong> the TSS — this corrects a minus-strand bug where the TSS sits at an endpoint, shifting the window off the gene body (see <a href="../services/agent_backend/tools/macros.py#L300-L301">macros.py:300-301</a>).</li>
+<li><code>_window_around(chrom, gene_center, cfg.max_input_length)</code> — builds <code>chrN:start-end</code> with length 131,072 bp centered on <code>gene_center</code>.</li>
+<li><code>_predict(locus, None, ["chip_tf"], "128bp", organism, session)</code> — session-cached.</li>
+<li>Rank top <code>3 × top_k</code> tracks by mean signal, annotate with metadata from <code>GET /tracks?head=chip_tf</code>, filter by <code>tissue_keywords</code> via substring match against <code>biosample_name</code>, <code>gtex_tissue</code>, <code>gtex_tissue_group</code>. If the filter eliminates all tracks, fall back to the unfiltered top list and add a note.</li>
+<li>Trim to <code>top_k</code> and emit an <code>igv_tracks</code> viz_spec.</li>
+</ol>
+<p><strong>Output</strong>:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;gene&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;gene_symbol&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ASPM&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ensembl_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chrom&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">197084121</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;end&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">197146694</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;strand&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;-&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;tss&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">197146694</span><span class="p">},</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr1:197049871-197180943&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;head&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chip_tf&quot;</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;top_tracks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;track_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1204</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;mean_signal&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;target_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CTCF&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;biosample_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;brain_cortex&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">},</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">&quot;note&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="nt">&quot;viz_spec&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;igv_tracks&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;prediction_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;locus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr1:197049871-197180943&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;head&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chip_tf&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;track_indices&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]}</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">}</span>
+</span></code></pre></div>
+<hr />
+<h3 id="analyze_region_regulation"><code>analyze_region_regulation</code><a class="headerlink" href="#analyze_region_regulation" title="Permanent link">&para;</a></h3>
+<p>Profile the chromatin-accessibility and histone-mark landscape of a locus.</p>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/macros.py#L326-L394">macros.py:326-394</a></p>
+<p><strong>Inputs</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>locus</code></td>
+<td>string</td>
+<td>—</td>
+<td><code>chrN:start-end</code></td>
+</tr>
+<tr>
+<td><code>heads</code></td>
+<td>list\&lt;string&gt;</td>
+<td><code>["atac","dnase","chip_histone"]</code></td>
+<td>Heads to profile</td>
+</tr>
+<tr>
+<td><code>top_k</code></td>
+<td>int</td>
+<td>5</td>
+<td>Top tracks per head</td>
+</tr>
+<tr>
+<td><code>organism</code></td>
+<td>string</td>
+<td><code>"human"</code></td>
+<td><code>"human"</code> / <code>"mouse"</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline</strong>:</p>
+<ol>
+<li><code>_predict(locus, None, heads, "128bp", organism, session)</code> — one forward pass, all heads in one go.</li>
+<li>For each head: rank top <code>top_k</code> tracks by mean signal, annotate from <code>/tracks</code>.</li>
+<li>Emit <code>igv_tracks</code> viz_spec anchored on the first head in <code>heads</code>.</li>
+</ol>
+<p><strong>Output</strong> (abbreviated):</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;locus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr17:43044295-43175000&quot;</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;heads&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;atac&quot;</span><span class="p">,</span><span class="s2">&quot;dnase&quot;</span><span class="p">,</span><span class="s2">&quot;chip_histone&quot;</span><span class="p">],</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;top_tracks_by_head&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;atac&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">&quot;track_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">112</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;mean_signal&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;assay_title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ATAC-seq&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">}],</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">&quot;dnase&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&quot;chip_histone&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">&quot;notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="nt">&quot;viz_spec&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;igv_tracks&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;head&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;atac&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">}</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span>
+</span></code></pre></div>
+<hr />
+<h3 id="analyze_variant_effect"><code>analyze_variant_effect</code><a class="headerlink" href="#analyze_variant_effect" title="Permanent link">&para;</a></h3>
+<p>Predict functional impact of a single-base substitution.</p>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/macros.py#L397-L483">macros.py:397-483</a></p>
+<p><strong>Inputs</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>variant_hgvs</code></td>
+<td>string</td>
+<td>—</td>
+<td>Genomic HGVS SNV, e.g. <code>chr17:g.43044295A&gt;G</code>. Only SNVs supported.</td>
+</tr>
+<tr>
+<td><code>heads</code></td>
+<td>list\&lt;string&gt;</td>
+<td><code>["atac","chip_tf"]</code></td>
+<td>Heads to compare</td>
+</tr>
+<tr>
+<td><code>window_bp</code></td>
+<td>int</td>
+<td><code>alphagenome.max_input_length</code></td>
+<td>Window size around the variant</td>
+</tr>
+<tr>
+<td><code>organism</code></td>
+<td>string</td>
+<td><code>"human"</code></td>
+<td><code>"human"</code> / <code>"mouse"</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline</strong>:</p>
+<ol>
+<li>Regex-parse the HGVS string.</li>
+<li><code>_window_around(chrom, pos, window_bp)</code> — centers on the variant position.</li>
+<li>REF pass: <code>_predict(locus, None, heads, …)</code>.</li>
+<li>ALT sequence: <code>apply_snv_to_sequence</code> fetches the reference sequence from alphagenome-svc <code>/sequence</code>, validates that the base at <code>pos</code> matches <code>ref</code>, and substitutes <code>alt</code>. ALT pass: <code>_predict(None, alt_sequence, heads, …)</code>.</li>
+<li>Per-head delta = <code>alt - ref</code>; compute L2 norm, max |Δ|, and index of the most-affected track (mean |Δ| over positions).</li>
+<li>Emit <code>variant_delta</code> viz_spec.</li>
+</ol>
+<p><strong>Output</strong>:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;variant&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr17:g.43044295A&gt;G&quot;</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;locus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr17:42978759-43109831&quot;</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">&quot;deltas&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;head&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;atac&quot;</span><span class="p">,</span><span class="w">    </span><span class="nt">&quot;l2&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.31</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;max_abs_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.41</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;top_track_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">112</span><span class="p">},</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;head&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chip_tf&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;l2&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.74</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;max_abs_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.28</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;top_track_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">884</span><span class="p">}</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">&quot;viz_spec&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;variant_delta&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;head&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;atac&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;variant_position&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">43044295</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">}</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Both REF and ALT predictions are cached via <code>_predict</code>'s session cache; if the agent re-issues the same call, both forward passes are skipped.</p>
+<hr />
+<h3 id="upload_sequence"><code>upload_sequence</code><a class="headerlink" href="#upload_sequence" title="Permanent link">&para;</a></h3>
+<p>Look up a sequence the user uploaded via <code>POST /upload</code>.</p>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/uploads.py">uploads.py</a></p>
+<p><strong>Inputs</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>upload_id</code></td>
+<td>string</td>
+<td>ID returned by <code>POST /upload</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Output</strong>:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="nt">&quot;upload_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;length&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2048</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;myseq.fasta&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sequence_preview&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ACGT…&quot;</span><span class="p">}</span>
+</span></code></pre></div>
+<p>This tool only returns metadata — it does NOT invoke AlphaGenome. To run prediction on an upload, enable <code>predict_tracks</code> in <a href="../config/tools.yaml">config/tools.yaml</a> and chain the two (feasible only with stronger models).</p>
+<hr />
+<h2 id="primitives-disabled-by-default">Primitives (disabled by default)<a class="headerlink" href="#primitives-disabled-by-default" title="Permanent link">&para;</a></h2>
+<h3 id="gene_to_locus"><code>gene_to_locus</code><a class="headerlink" href="#gene_to_locus" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/genome_lookup.py">genome_lookup.py</a></p>
+<p>Ensembl REST gene → <code>{chrom, start, end, strand, biotype, ensembl_id, locus}</code>. 404 on unknown symbols returns a structured <code>{"error": "..."}</code> rather than raising.</p>
+<h3 id="predict_tracks"><code>predict_tracks</code><a class="headerlink" href="#predict_tracks" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/alphagenome.py#L22-L106">alphagenome.py:22-106</a></p>
+<p>Low-level <code>/predict</code> wrapper.</p>
+<ul>
+<li>Takes <code>locus | sequence</code>, <code>heads</code>, <code>resolution</code>, <code>organism</code>.</li>
+<li>Decodes arrays, stashes them on <code>session.last_prediction</code>, returns shape summaries (mean, max, n_tracks per head) — NOT the full tensors. Tensors stay server-side for later retrieval via <code>GET /sessions/.../tracks</code>.</li>
+</ul>
+<h3 id="predict_variant_effect"><code>predict_variant_effect</code><a class="headerlink" href="#predict_variant_effect" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/alphagenome.py#L109-L180">alphagenome.py:109-180</a></p>
+<p>Low-level version of <code>analyze_variant_effect</code>. Takes <code>locus, variant_position, ref, alt, heads, resolution, organism</code> — no HGVS parsing.</p>
+<h3 id="list_tracks_by_assay"><code>list_tracks_by_assay</code><a class="headerlink" href="#list_tracks_by_assay" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/tracks.py">tracks.py</a></p>
+<p>Proxy to alphagenome-svc <code>/tracks</code> with <code>assay</code> / <code>tissue</code> / <code>head</code> / <code>organism</code> filters. Returns up to 50 rows.</p>
+<h3 id="get_top_tracks"><code>get_top_tracks</code><a class="headerlink" href="#get_top_tracks" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/alphagenome.py#L183-L212">alphagenome.py:183-212</a></p>
+<p>Rank tracks from <code>session.last_prediction</code> by mean signal. Returns <code>{head, top_tracks: [{track_index, mean_signal}], prediction_id}</code>. Errors if there's no prior prediction.</p>
+<h3 id="render_panel"><code>render_panel</code><a class="headerlink" href="#render_panel" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/viz.py">viz.py</a></p>
+<p>Emit a <code>viz_spec</code> without running anything. Takes <code>panel_type, head?, track_indices?</code>; uses the session's last prediction.</p>
+<h3 id="parse_hgvs"><code>parse_hgvs</code><a class="headerlink" href="#parse_hgvs" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="../services/agent_backend/tools/variants.py">variants.py</a></p>
+<p>Regex-parse a simple genomic HGVS SNV. Returns <code>{chrom, position, ref, alt}</code> or an error.</p>
+<hr />
+<h2 id="planned-stubs-neither-class-nor-wiring-exist">Planned stubs (neither class nor wiring exist)<a class="headerlink" href="#planned-stubs-neither-class-nor-wiring-exist" title="Permanent link">&para;</a></h2>
+<p>These appear in <a href="../config/tools.yaml">config/tools.yaml</a> as documentation of intent:</p>
+<ul>
+<li><code>ensembl_regulatory_build(locus)</code> — annotated regulatory features.</li>
+<li><code>jaspar_motif_scan(sequence, tf)</code> — motif sanity-check vs. a TF-binding prediction.</li>
+<li><code>gtex_expression(gene, tissue)</code> — ground RNA-seq predictions in measured data.</li>
+<li><code>conservation_score(locus)</code> — phyloP/phastCons via UCSC.</li>
+<li><code>clinvar_lookup(locus_or_rsid)</code> — pathogenicity annotations.</li>
+</ul>
+<p>To add one, follow <a href="tutorials/05-adding-a-tool.html">tutorials/05-adding-a-tool.md</a>.</p>
+<hr />
+<h2 id="side-effects-on-the-session">Side-effects on the session<a class="headerlink" href="#side-effects-on-the-session" title="Permanent link">&para;</a></h2>
+<p>Several tools mutate <code>session</code> in ways the rest of the system relies on:</p>
+<ul>
+<li><strong><code>session.last_prediction</code></strong> — set by <code>predict_tracks</code>, <code>analyze_gene_tf_binding</code>, <code>analyze_region_regulation</code>, <code>analyze_variant_effect</code>. Holds the decoded numpy arrays. <code>GET /sessions/.../tracks</code> reads from here.</li>
+<li><strong><code>session.pending_viz_spec</code></strong> — set by any macro that emits a visualization. Picked up and emitted as an SSE event by the next <code>step_callback</code> pass (see <a href="../services/agent_backend/agent.py#L64-L67">agent.py:64-67</a>).</li>
+<li><strong><code>session.predict_cache</code></strong> — populated lazily by <code>_predict</code>. Keyed on <code>(locus, sequence, heads, resolution, organism)</code>. Max 8 entries, FIFO eviction.</li>
+<li><strong><code>session.uploads</code></strong> — populated by <code>POST /upload</code>, read by <code>upload_sequence</code>.</li>
+</ul>
+<hr />
+<h2 id="adding-progress-events-to-a-custom-tool">Adding progress events to a custom tool<a class="headerlink" href="#adding-progress-events-to-a-custom-tool" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionAwareTool</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.macros</span><span class="w"> </span><span class="kn">import</span> <span class="n">_emit</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyTool</span><span class="p">(</span><span class="n">SessionAwareTool</span><span class="p">):</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="o">...</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="n">_emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session_context</span><span class="p">,</span> <span class="s2">&quot;progress&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;stage&quot;</span><span class="p">:</span> <span class="s2">&quot;my_tool_start&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>        <span class="o">...</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>        <span class="n">_emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session_context</span><span class="p">,</span> <span class="s2">&quot;progress&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;stage&quot;</span><span class="p">:</span> <span class="s2">&quot;my_tool_done&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;done in 2.3s&quot;</span><span class="p">})</span>
+</span></code></pre></div>
+<p>The <code>_emit</code> helper no-ops if there's no bus attached (e.g. in tests or batch scripts), so the same tool works inside and outside a chat context.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy", "content.tabs.link", "search.highlight", "search.share"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

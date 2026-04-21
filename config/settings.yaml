@@ -1,0 +1,12 @@
+app_env: dev
+
+server:
+  agent_backend_port: 8000
+  alphagenome_svc_port: 8001
+  cors_origins:
+    - http://localhost:5173
+
+limits:
+  max_sequence_length: 131072
+  max_upload_bytes: 10485760
+  session_ttl_seconds: 3600
