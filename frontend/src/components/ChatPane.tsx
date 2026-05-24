@@ -12,6 +12,7 @@ export default function ChatPane() {
   const [busy, setBusy] = useState(false);
   const [ratings, setRatings] = useState<Record<number, "up" | "down">>({});
   const [rejectedContents, setRejectedContents] = useState<Record<number, string>>({});
+  const [rejectedToolCalls, setRejectedToolCalls] = useState<Record<number, ToolCall[]>>({});
 
   const send = async () => {
     if (!input.trim() || busy) return;
@@ -107,6 +108,12 @@ export default function ChatPane() {
     const prevUserMessage = messages[index - 1]?.content ?? "";
     const promptContext = `User: ${prevUserMessage}`;
 
+    const chosen = rating === "up" ? message.content : rejectedContents[index] || "";
+    const rejected = rating === "down" ? message.content : "";
+
+    const chosenToolCalls = rating === "up" ? message.toolCalls || [] : rejectedToolCalls[index] || [];
+    const rejectedToolCallsVal = rating === "down" ? message.toolCalls || [] : [];
+
     try {
       await fetch(`${BACKEND}/feedback/preference`, {
         method: "POST",
@@ -114,8 +121,10 @@ export default function ChatPane() {
         body: JSON.stringify({
           session_id: sessionId,
           prompt: promptContext,
-          chosen: rating === "up" ? message.content : rejectedContents[index] || "",
-          rejected: rating === "down" ? message.content : "",
+          chosen,
+          rejected,
+          chosen_tool_calls: chosenToolCalls,
+          rejected_tool_calls: rejectedToolCallsVal,
         }),
       });
     } catch (e) {
@@ -128,8 +137,9 @@ export default function ChatPane() {
     const prevUserMessage = messages[index - 1]?.content;
     if (!prevUserMessage) return;
 
-    // Cache current content as rejected
+    // Cache current content and tool calls as rejected
     setRejectedContents((prev) => ({ ...prev, [index]: messages[index].content }));
+    setRejectedToolCalls((prev) => ({ ...prev, [index]: messages[index].toolCalls || [] }));
 
     setBusy(true);
     // Reset message state

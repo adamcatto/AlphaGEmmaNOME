@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import asyncio
 import json
 import logging
@@ -83,6 +84,8 @@ class PreferenceRequest(BaseModel):
     prompt: str
     chosen: str
     rejected: str
+    chosen_tool_calls: list[dict[str, Any]] | None = None
+    rejected_tool_calls: list[dict[str, Any]] | None = None
 
 
 class CorrectionRequest(BaseModel):
@@ -371,7 +374,14 @@ async def chat(req: ChatRequest):
 @app.post("/feedback/preference")
 def post_preference(req: PreferenceRequest):
     from .feedback_store import log_preference
-    return log_preference(req.session_id, req.prompt, req.chosen, req.rejected)
+    return log_preference(
+        req.session_id,
+        req.prompt,
+        req.chosen,
+        req.rejected,
+        req.chosen_tool_calls,
+        req.rejected_tool_calls,
+    )
 
 
 @app.post("/feedback/correction")

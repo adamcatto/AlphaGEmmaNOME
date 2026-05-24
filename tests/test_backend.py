@@ -37,12 +37,14 @@ def clean_feedback_files(tmp_path, monkeypatch):
 
 
 def test_feedback_logging_and_export():
-    # 1. Log a preference pair (DPO)
+    # 1. Log a preference pair (DPO) with tool calls
     log_preference(
         session_id="test-session-123",
         prompt="User: Silence track 0",
         chosen="Thoughts: let's delete... Answer: micro-deletion done",
         rejected="Answer: I cannot do that",
+        chosen_tool_calls=[{"tool": "optimize_edits", "status": "done", "arguments": {"locus": "chr19:123"}}],
+        rejected_tool_calls=[],
     )
 
     # 2. Log an expert correction (SFT)
@@ -64,6 +66,8 @@ def test_feedback_logging_and_export():
     assert len(dpo_data) == 1
     assert dpo_data[0]["session_id"] == "test-session-123"
     assert dpo_data[0]["prompt"] == "User: Silence track 0"
+    assert dpo_data[0]["chosen_tool_calls"] == [{"tool": "optimize_edits", "status": "done", "arguments": {"locus": "chr19:123"}}]
+    assert dpo_data[0]["rejected_tool_calls"] == []
 
     sft_data = export_dataset("sft")
     assert len(sft_data) == 1
@@ -81,10 +85,13 @@ def test_backend_api_feedback_endpoints():
             "prompt": "User: edit track 2",
             "chosen": "Correct plan",
             "rejected": "Wrong plan",
+            "chosen_tool_calls": [{"tool": "optimize_edits", "status": "done"}],
+            "rejected_tool_calls": [],
         },
     )
     assert res.status_code == 200
     assert res.json()["session_id"] == "test-api-session"
+    assert res.json()["chosen_tool_calls"] == [{"tool": "optimize_edits", "status": "done"}]
 
     # Test POST /feedback/correction
     res = client.post(

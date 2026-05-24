@@ -22,6 +22,8 @@ def log_preference(
     prompt: str,
     chosen: str,
     rejected: str,
+    chosen_tool_calls: list[dict[str, Any]] | None = None,
+    rejected_tool_calls: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     ensure_data_dir()
     entry = {
@@ -29,6 +31,8 @@ def log_preference(
         "prompt": prompt,
         "chosen": chosen,
         "rejected": rejected,
+        "chosen_tool_calls": chosen_tool_calls or [],
+        "rejected_tool_calls": rejected_tool_calls or [],
         "timestamp": time.time(),
     }
     with _lock:
