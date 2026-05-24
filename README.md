@@ -56,6 +56,125 @@ curl localhost:8001/health
 curl localhost:8000/health
 ```
 
+## Chat Interface & Agent Orchestration
+
+OmniGemmaNome uses a state-of-the-art asynchronous multi-node orchestration engine to bridge the gap between human instruction and raw deep learning simulators.
+
+### 🗺️ System Information Flow Architecture
+When you type a query in the chat interface, information travels across three main components in real-time. The diagram below illustrates how user sessions, LangGraph states, and microservices exchange instructions, tool actions, and predictions:
+
+```
+[ User Browser (React UI) ]
+      │
+      │ 1. POST /chat (User Message + Session ID)
+      ▼
+[ agent_backend (FastAPI REST App) ]
+      │
+      │ 2. Instantiate StateGraph(initial_state)
+      ▼
+ ┌────────────────────────────────────────────────────────┐
+ │ LangGraph State Machine (Orchestrator)                 │
+ │                                                        │
+ │        [ START ]                                       │
+ │            │                                           │
+ │            ▼                                           │
+ │     [ Intent Router ]                                  │
+ │       /          \                                     │
+ │  ("answer")   ("predict")                              │
+ │     /              \                                   │
+ │    ▼                ▼                                  │
+ │ [Conversational] [Agent Node]                          │
+ │                      │   ▲                             │
+ │             (Tool    │   │ (Tool                       │
+ │             Calls)   ▼   │ Messages)                   │
+ │                  [ToolNode]                            │
+ │                      │                                 │
+ │                      ▼                                 │
+ │              [Synthesizer]                             │
+ │                      │                                 │
+ │                      ▼                                 │
+ │                   [ END ]                              │
+ └──────────────────────╂─────────────────────────────────┘
+                        ┃
+                        ┃ 3. Execute Tool Actions / Predictions
+                        ▼
+           [ alphagenome_svc (FastAPI Server) ]
+                        │
+                        │ 4. forward(dna, organism_index)
+                        ▼
+              [ AlphaGenome Predictor ]
+                        │
+                        │ 5. Return Predicted Epigenomic Tracks
+                        ▼
+           [ alphagenome_svc (FastAPI Server) ]
+                        ┃
+                        ┃ 6. Return Evaluation Signal or NDJSON /stream
+                        ▼
+[ agent_backend (FastAPI REST App) ]
+      │
+      │ 7. Server-Sent Events (SSE) Stream (chunks, thoughts, tool_starts, viz_specs, final)
+      ▼
+[ User Browser (React UI) ]
+```
+
+### 🔁 Asynchronous Event-Stream Life Cycle (SSE Protocol)
+To ensure the user interface stays highly responsive and fluid, the agent backend and frontend communicate via a stateful Server-Sent Events (SSE) connection. This prevents the UI from blocking during long-running genomic operations and allows reasoning processes to be streamed progressively.
+
+Below is a sequence diagram detailing the SSE life cycle of a single `/chat` transaction, showing how token chunks, inner `<think>` blocks, tool starts, tool results, progress updates, and final answers are progressively emitted to the React client:
+
+```
+User (Browser)           agent_backend (LangGraph)           alphagenome_svc (Solver)
+     │                                │                                │
+     │─────── 1. POST /chat ─────────>│                                │
+     │        (User Query)            │                                │
+     │                                │                                │
+     │<── 2. Connection Established ──│                                │
+     │    (EventSource / SSE)         │                                │
+     │                                │                                │
+     │                                │── 3. Classify intent ─────────>│
+     │                                │    (Ollama Local Model)        │
+     │                                │                                │
+     │<── 4. emit "thought" ──────────│                                │
+     │    (Reasoning/Think blocks)    │                                │
+     │                                │                                │
+     │                                │── 5. Trigger Tool Call ───────>│
+     │                                │    (e.g., optimize_edits)      │
+     │                                │                                │
+     │<── 6. emit "tool_call_start" ──│                                │
+     │    (Parameters displayed)      │                                │
+     │                                │                                │
+     │                                │                                │─── 7. RunISM / Evaluate ──┐
+     │                                │                                │    (Predictor Loop)       │
+     │                                │                                │<──────────────────────────┘
+     │                                │                                │
+     │                                │<── 8. Stream Progression ──────│
+     │                                │    (NDJSON progress SSE)       │
+     │                                │                                │
+     │<── 9. emit "progress" ─────────│                                │
+     │    (UI dynamic progress bar)   │                                │
+     │                                │                                │
+     │                                │<── 10. Return Best Candidate ──│
+     │                                │    (Visual track spec dict)    │
+     │                                │                                │
+     │<── 11. emit "viz_spec" ────────│                                │
+     │    (Draw Comparative Plot)     │                                │
+     │                                │                                │
+     │<── 12. emit "tool_call_result"─│                                │
+     │    (Structured execution log)  │                                │
+     │                                │                                │
+     │                                │── 13. Summarize Plan ─────────>│
+     │                                │    (Synthesizer LLM)           │
+     │                                │                                │
+     │<── 14. emit "token" ───────────│                                │
+     │    (Word-by-word streaming)    │                                │
+     │                                │                                │
+     │<── 15. emit "final" ───────────│                                │
+     │    (Transaction complete)      │                                │
+     │                                │                                │
+     │<── 16. Terminate Connection ───│                                │
+     │                                │                                │
+```
+
 ## Status
 
 Scaffold. AlphaGenome track metadata is a placeholder — see [services/alphagenome_svc/data/track_metadata.tsv](services/alphagenome_svc/data/track_metadata.tsv) and [scripts/fetch_track_metadata.py](scripts/fetch_track_metadata.py).
