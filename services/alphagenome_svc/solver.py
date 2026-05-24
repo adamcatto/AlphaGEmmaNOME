@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import logging
-import re
+import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from schema import load_settings
 from .model_loader import get_model
 from .sequence import fetch_sequence, parse_locus
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+ProgressCallback = Callable[[int, int, str], None]
 
 # Predefined consensus sequences for key transcription factor binding motifs
 KNOWN_MOTIFS = {
@@ -22,16 +27,113 @@ KNOWN_MOTIFS = {
 }
 
 
+def evenly_sample(items: list[T], max_n: int | None) -> list[T]:
+    """Return up to *max_n* items evenly spaced through *items* (preserving order)."""
+    if max_n is None or len(items) <= max_n:
+        return items
+    if max_n <= 0:
+        return []
+    if max_n == 1:
+        return [items[0]]
+
+    n = len(items)
+    indices = [round(i * (n - 1) / (max_n - 1)) for i in range(max_n)]
+    seen: set[int] = set()
+    result: list[T] = []
+    for idx in indices:
+        if idx not in seen:
+            seen.add(idx)
+            result.append(items[idx])
+    return result
+
+
+def evenly_spaced_positions(
+    region_start: int,
+    region_end: int,
+    count: int,
+    *,
+    inset: int = 0,
+) -> list[int]:
+    """Return up to *count* genomic positions evenly spaced across [region_start, region_end - inset]."""
+    if count <= 0:
+        return []
+
+    last_pos = region_end - inset
+    if last_pos < region_start:
+        return [region_start]
+
+    if count == 1:
+        return [region_start + (last_pos - region_start) // 2]
+
+    span = last_pos - region_start
+    seen: set[int] = set()
+    positions: list[int] = []
+    for i in range(count):
+        pos = region_start + round(i * span / (count - 1))
+        if pos not in seen:
+            seen.add(pos)
+            positions.append(pos)
+    return positions
+
+
+# Default deletion length when max_candidates requests evenly-spaced placement
+_EVENLY_SPACED_DELETION_BP = 10
+
+
+def _track_mean_detail(description: str, signal: float) -> str:
+    """Format progress text with the objective track's mean signal across bins."""
+    return f"{description} | track mean={signal:.6f}"
+
+
+def _report_progress(
+    current: int,
+    total: int,
+    detail: str,
+    t_start: float,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """Log and optionally emit a 1..N progress update."""
+    if total <= 0:
+        return
+
+    percent = int((current / total) * 100)
+    bar_len = 25
+    filled = int(bar_len * current // total)
+    if current >= total:
+        bar = "=" * bar_len
+    elif filled >= bar_len:
+        bar = "=" * bar_len
+    else:
+        bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
+
+    elapsed = time.time() - t_start
+    avg_time = elapsed / current if current > 0 else 0.0
+    eta = avg_time * (total - current)
+    eta_str = f"{int(eta)}s" if current > 0 else "--s"
+
+    logger.info(
+        f"[{bar}] {percent}% ({current}/{total}) | {detail} | "
+        f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+    )
+    if progress_callback is not None:
+        progress_callback(current, total, detail)
+
+
 def score_candidate(signal: float, mode: str, target: float | None, ref_signal: float) -> float:
-    """Return a score where higher is better, based on the objective mode."""
+    """Return a score where higher is better, based on the log2 fold-change (LFC) over reference baseline."""
+    import math
+    eps = 1e-4
+    lfc = math.log2((signal + eps) / (ref_signal + eps))
+
     if mode == "maximize":
-        return signal - ref_signal
+        return lfc
     elif mode == "minimize":
-        return ref_signal - signal
+        return -lfc
     elif mode == "target":
         if target is None:
             return 0.0
-        return -abs(signal - target)
+        target_lfc = math.log2((target + eps) / (ref_signal + eps))
+        return -abs(lfc - target_lfc)
     return 0.0
 
 
@@ -53,12 +155,17 @@ def apply_edit(
         return ref_seq[:seq_offset] + change_seq + ref_seq[seq_offset + length:]
 
     elif edit_type == "deletion":
-        del_seq = ref_seq[:seq_offset] + ref_seq[seq_offset + length:]
+        # In-place replacement: keep sequence length and coordinate alignment so
+        # each bin still maps to the same genomic position in the input window.
+        pad_start = pos + length
+        pad_end = pad_start + length
         try:
-            extra = fetch_sequence(f"{locus_chrom}:{locus_end}-{locus_end + length}", fasta_path)
+            fill = fetch_sequence(f"{locus_chrom}:{pad_start}-{pad_end}", fasta_path)
         except Exception:
-            extra = "T" * length  # safe fallback padding
-        return del_seq + extra
+            fill = "N" * length
+        if len(fill) < length:
+            fill = (fill + "N" * length)[:length]
+        return ref_seq[:seq_offset] + fill + ref_seq[seq_offset + length:]
 
     elif edit_type in ("insertion", "motif"):
         ins_seq = ref_seq[:seq_offset] + change_seq + ref_seq[seq_offset:]
@@ -79,9 +186,10 @@ def solve_optimize_edits(
     organism: str = "human",
     top_k: int = 5,
     motif_name: str | None = None,
+    max_candidates: int | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Find the best genome edits using AlphaGenome predictions and state-space exploration."""
-    import time
     settings = load_settings()
     model = get_model()
     if model is None:
@@ -100,6 +208,10 @@ def solve_optimize_edits(
 
     ref_preds = model.predict_sequence(ref_seq, organism_idx, (objective_head,), (res_int,))
     ref_signal = model.extract_track_signal(ref_preds, objective_head, objective_track, res_int)
+    logger.info(
+        f"Reference {objective_head} track {objective_track} mean signal={ref_signal:.4f} "
+        f"(avg across the 3 center bins at {res_int}bp resolution)"
+    )
 
     candidates: list[dict[str, Any]] = []
 
@@ -112,6 +224,7 @@ def solve_optimize_edits(
         seq_change: str,
         current_idx: int | None = None,
         total_count: int | None = None,
+        t_start: float | None = None,
     ) -> float:
         preds = model.predict_sequence(mut_seq, organism_idx, (objective_head,), (res_int,))
         signal = model.extract_track_signal(preds, objective_head, objective_track, res_int)
@@ -130,23 +243,13 @@ def solve_optimize_edits(
             "mut_seq": mut_seq,
         })
 
-        if current_idx is not None and total_count is not None:
-            percent = int((current_idx / total_count) * 100)
-            bar_len = 25
-            filled = int(bar_len * current_idx // total_count)
-            bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
-            if current_idx == total_count:
-                bar = "=" * bar_len
-
-            elapsed = time.time() - t_start
-            avg_time = elapsed / current_idx if current_idx > 0 else 0.0
-            eta = avg_time * (total_count - current_idx)
-            eta_str = f"{int(eta)}s" if current_idx > 0 else "--s"
-
-            logger.info(
-                f"[{bar}] {percent}% ({current_idx}/{total_count}) | "
-                f"Evaluating: {seq_change} at pos {pos} | "
-                f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+        if current_idx is not None and total_count is not None and t_start is not None:
+            _report_progress(
+                current_idx,
+                total_count,
+                _track_mean_detail(f"Evaluating: {seq_change} at pos {pos}", signal),
+                t_start,
+                progress_callback,
             )
         return score
 
@@ -165,7 +268,14 @@ def solve_optimize_edits(
                     continue
                 single_mut_specs.append((genomic_pos, ref_base, alt))
 
+        full_single_count = len(single_mut_specs)
+        single_mut_specs = evenly_sample(single_mut_specs, max_candidates)
         total_single = len(single_mut_specs)
+        if max_candidates is not None and total_single < full_single_count:
+            logger.info(
+                f"SNV scan limited to {total_single}/{full_single_count} evenly-spaced candidates "
+                f"(max_candidates={max_candidates})."
+            )
         logger.info(f"Starting single substitution SNV scan: {total_single} candidates to evaluate.")
 
         single_muts: list[dict[str, Any]] = []
@@ -186,23 +296,14 @@ def solve_optimize_edits(
                 "seq": mut_seq
             })
 
-            # Print single scan progress
-            percent = int((i / total_single) * 100)
-            bar_len = 25
-            filled = int(bar_len * i // total_single)
-            bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
-            if i == total_single:
-                bar = "=" * bar_len
-
-            elapsed = time.time() - t_start
-            avg_time = elapsed / i if i > 0 else 0.0
-            eta = avg_time * (total_single - i)
-            eta_str = f"{int(eta)}s" if i > 0 else "--s"
-
-            logger.info(
-                f"[{bar}] {percent}% ({i}/{total_single}) | "
-                f"Scanning base: {ref_base}>{alt} at pos {genomic_pos} | "
-                f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+            _report_progress(
+                i,
+                total_single,
+                _track_mean_detail(
+                    f"Scanning base: {ref_base}>{alt} at pos {genomic_pos}", signal
+                ),
+                t_start,
+                progress_callback,
             )
 
         # Sort single mutations by objective score descending
@@ -241,23 +342,14 @@ def solve_optimize_edits(
 
                         next_beam.append((active_muts + [m], score, new_seq))
 
-                        # Log progress for active beam evaluations
-                        percent = int((beam_idx / total_beam_evals) * 100)
-                        bar_len = 25
-                        filled = int(bar_len * beam_idx // total_beam_evals)
-                        bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
-                        if beam_idx == total_beam_evals:
-                            bar = "=" * bar_len
-
-                        elapsed = time.time() - t_beam_start
-                        avg_time = elapsed / beam_idx if beam_idx > 0 else 0.0
-                        eta = avg_time * (total_beam_evals - beam_idx)
-                        eta_str = f"{int(eta)}s" if beam_idx > 0 else "--s"
-
-                        logger.info(
-                            f"[{bar}] {percent}% ({beam_idx}/{total_beam_evals}) | "
-                            f"Beam step {step} | combo pos {m['pos']} | "
-                            f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+                        _report_progress(
+                            beam_idx,
+                            total_beam_evals,
+                            _track_mean_detail(
+                                f"Beam step {step} | combo pos {m['pos']}", signal
+                            ),
+                            t_beam_start,
+                            progress_callback,
                         )
 
                 if not next_beam:
@@ -283,25 +375,46 @@ def solve_optimize_edits(
                 evaluate_sequence(seq, "snv", muts[0]["pos"], len(muts), combo_str)
 
     elif edit_type == "deletion":
-        # Sliding-Window Deletion Scanner
         deletion_sizes = [5, 10, 25, 50]
-        specs = []
-        for L in deletion_sizes:
-            if L > (des_end - des_start):
-                continue
-            stride = max(1, L // 5)
-            for p in range(des_start, des_end - L + 1, stride):
+        specs: list[tuple[str, str, int, int, str]] = []
+
+        if max_candidates is not None:
+            # Place exactly max_candidates deletions evenly across the full input locus
+            L = _EVENLY_SPACED_DELETION_BP
+            positions = evenly_spaced_positions(
+                locus_start, locus_end, max_candidates, inset=2 * L
+            )
+            for p in positions:
                 mut_seq = apply_edit(
                     ref_seq, chrom, locus_start, locus_end, "deletion",
                     p, L, "", settings.paths.genome_fasta
                 )
                 specs.append((mut_seq, "deletion", p, L, f"del {L}bp"))
+            logger.info(
+                f"Placing {len(specs)} x {L}bp deletions evenly across input locus "
+                f"{chrom}:{locus_start}-{locus_end} (max_candidates={max_candidates})."
+            )
+        else:
+            # Exhaustive sliding-window scan within design_region
+            for L in deletion_sizes:
+                if L > (des_end - des_start):
+                    continue
+                stride = max(1, L // 5)
+                for p in range(des_start, des_end - L + 1, stride):
+                    mut_seq = apply_edit(
+                        ref_seq, chrom, locus_start, locus_end, "deletion",
+                        p, L, "", settings.paths.genome_fasta
+                    )
+                    specs.append((mut_seq, "deletion", p, L, f"del {L}bp"))
+            logger.info(
+                f"Starting sliding-window deletion scan in design region: "
+                f"{len(specs)} candidates to evaluate."
+            )
 
         total = len(specs)
-        logger.info(f"Starting sliding-window deletion scan: {total} candidates to evaluate.")
         t_start = time.time()
         for i, (m_seq, m_type, p, L, desc) in enumerate(specs, 1):
-            evaluate_sequence(m_seq, m_type, p, L, desc, i, total)
+            evaluate_sequence(m_seq, m_type, p, L, desc, i, total, t_start)
 
     elif edit_type == "insertion" or edit_type == "motif":
         # Determine motif or sequence to insert
@@ -359,19 +472,42 @@ def solve_optimize_edits(
                 )
                 specs.append((mut_seq, "insertion", p, motif_len, f"insert motif {motif_name} ({motif_seq})"))
 
+        full_motif_count = len(specs)
+        specs = evenly_sample(specs, max_candidates)
         total = len(specs)
+        if max_candidates is not None and total < full_motif_count:
+            logger.info(
+                f"Motif/insertion scan limited to {total}/{full_motif_count} evenly-spaced candidates "
+                f"(max_candidates={max_candidates})."
+            )
         logger.info(f"Starting motif/insertion scan: {total} candidates to evaluate.")
         t_start = time.time()
         for i, (m_seq, m_type, p, L, desc) in enumerate(specs, 1):
-            evaluate_sequence(m_seq, m_type, p, L, desc, i, total)
+            evaluate_sequence(m_seq, m_type, p, L, desc, i, total, t_start)
 
     # 3. Sort candidates by objective score descending
-    candidates.sort(key=lambda c: -c["score"])
+    if objective_mode == "minimize":
+        candidates.sort(key=lambda c: (-c["score"], c["predicted_signal"]))
+    elif objective_mode == "maximize":
+        candidates.sort(key=lambda c: (-c["score"], -c["predicted_signal"]))
+    else:
+        candidates.sort(key=lambda c: -c["score"])
     top_candidates = candidates[:top_k]
 
     best = top_candidates[0] if top_candidates else None
     ref_seq_out = ref_seq
-    edited_seq_out = best.get("mut_seq") if best else None
+    edited_seq_out = None
+    if best is not None:
+        edited_seq_out = best.get("mut_seq")
+        if edited_seq_out is not None:
+            edited_seq_out = str(edited_seq_out)
+        logger.info(
+            "Best edit: %s at pos %s (predicted_signal=%.6f, score=%.6f)",
+            best.get("sequence_change"),
+            best.get("position"),
+            best.get("predicted_signal", 0.0),
+            best.get("score", 0.0),
+        )
 
     # Clean up fields we don't serialize (like "score" and "mut_seq")
     for c in top_candidates:

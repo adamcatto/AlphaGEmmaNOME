@@ -164,6 +164,7 @@ class OptimizeSequenceResponse(BaseModel):
 class OptimizeEditsRequest(BaseModel):
     locus: str
     design_region: str | None = None
+    design_region_half_bp: int | None = None  # ±N bp around locus center when design_region omitted
     edit_type: Literal["snv", "deletion", "insertion", "motif"]
     objective_head: Head
     objective_track: int
@@ -172,6 +173,7 @@ class OptimizeEditsRequest(BaseModel):
     max_edits: int = 1
     organism: Organism = "human"
     top_k: int = 5
+    max_candidates: int | None = None  # cap edits to evaluate; evenly spaced across design region
     # Insertion / motif parameters if needed:
     motif_name: str | None = None  # e.g., "CTCF" for insertion or ablation
 

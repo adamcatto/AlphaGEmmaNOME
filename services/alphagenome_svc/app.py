@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import base64
 import csv
+import json
 import logging
 import logging.config
+import queue
+import re
+import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -13,6 +17,7 @@ import numpy as np
 import yaml
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 # Load logging configuration as early as possible
 _log_cfg_path = Path(__file__).resolve().parent.parent.parent / "config" / "logging.yaml"
@@ -382,21 +387,82 @@ def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
     return f"{chrom}:{start}-{end}"
 
 
-def _resolve_subregion(locus: str, sub: str | None, half_default: int) -> tuple[str, int, int]:
-    """Return (chrom, start, end) for the ISM sub-region."""
-    locus_chrom, locus_start, locus_end = _parse_locus_coords(locus)
-    if sub:
-        chrom, start, end = _parse_locus_coords(sub)
-    else:
-        center = (locus_start + locus_end) // 2
-        start = max(locus_start, center - half_default)
-        end = min(locus_end, center + half_default)
-        chrom = locus_chrom
-    # Clamp to locus boundaries and enforce max cap
+def _clamp_subregion(
+    chrom: str,
+    locus_start: int,
+    locus_end: int,
+    start: int,
+    end: int,
+) -> tuple[str, int, int]:
     start = max(start, locus_start)
     end = min(end, locus_end)
     end = min(end, start + _ISM_MAX_REGION_BP)
+    if end <= start:
+        end = min(start + 1, locus_end)
     return chrom, start, end
+
+
+def _resolve_subregion(
+    locus: str,
+    sub: str | None,
+    half_default: int,
+    half_bp: int | None = None,
+) -> tuple[str, int, int]:
+    """Return (chrom, start, end) for the edit/ISM sub-region.
+
+    Accepts:
+    - ``None`` → ±*half_bp* or ±*half_default* around the locus center
+    - ``chrN:start-end`` → explicit coordinates
+    - ``±100`` / ``100`` / ``100bp`` → ±*N* around locus center
+    - ``chr20:10308258±100`` or ``chr20:10172395-10308258±100`` → ±*N* around
+      the trailing coordinate (common when an LLM appends ±N to a gene boundary)
+    """
+    locus_chrom, locus_start, locus_end = _parse_locus_coords(locus)
+    half = half_bp if half_bp is not None else half_default
+
+    if not sub:
+        center = (locus_start + locus_end) // 2
+        return _clamp_subregion(
+            locus_chrom, locus_start, locus_end, center - half, center + half
+        )
+
+    sub = sub.strip().replace("+/-", "±")
+
+    half_only = re.fullmatch(r"[±]?\s*(\d+)\s*(?:bp)?", sub, re.IGNORECASE)
+    if half_only:
+        h = int(half_only.group(1))
+        center = (locus_start + locus_end) // 2
+        return _clamp_subregion(
+            locus_chrom, locus_start, locus_end, center - h, center + h
+        )
+
+    relative = re.fullmatch(
+        r"(?:chr[\w]+:)?(?:(\d+)-)?(\d+)\s*±\s*(\d+)",
+        sub,
+        re.IGNORECASE,
+    )
+    if relative:
+        center = int(relative.group(2))
+        h = int(relative.group(3))
+        center = max(locus_start, min(center, locus_end))
+        return _clamp_subregion(
+            locus_chrom, locus_start, locus_end, center - h, center + h
+        )
+
+    try:
+        chrom, start, end = _parse_locus_coords(sub)
+    except ValueError:
+        logger.warning(
+            "Invalid design_region %r — falling back to ±%d bp around locus center",
+            sub,
+            half,
+        )
+        center = (locus_start + locus_end) // 2
+        return _clamp_subregion(
+            locus_chrom, locus_start, locus_end, center - half, center + half
+        )
+
+    return _clamp_subregion(chrom, locus_start, locus_end, start, end)
 
 
 @app.post("/attribution", response_model=AttributionResponse)
@@ -591,17 +657,24 @@ def optimize_sequence(req: OptimizeSequenceRequest) -> OptimizeSequenceResponse:
 
 @app.post("/optimize_edits", response_model=OptimizeEditsResponse)
 def optimize_edits(req: OptimizeEditsRequest) -> OptimizeEditsResponse:
+    return OptimizeEditsResponse(**_run_optimize_edits(req))
+
+
+def _run_optimize_edits(req: OptimizeEditsRequest) -> dict:
     from .solver import solve_optimize_edits
 
     req.locus = _adjust_locus_to_multiple(req.locus)
 
     chrom, des_start, des_end = _resolve_subregion(
-        req.locus, req.design_region, half_default=50
+        req.locus,
+        req.design_region,
+        half_default=50,
+        half_bp=req.design_region_half_bp,
     )
     design_region_str = f"{chrom}:{des_start}-{des_end}"
 
     try:
-        result = solve_optimize_edits(
+        return solve_optimize_edits(
             locus=req.locus,
             design_region_str=design_region_str,
             edit_type=req.edit_type,
@@ -613,9 +686,75 @@ def optimize_edits(req: OptimizeEditsRequest) -> OptimizeEditsResponse:
             organism=req.organism,
             top_k=req.top_k,
             motif_name=req.motif_name,
+            max_candidates=req.max_candidates,
         )
     except Exception as e:
         raise HTTPException(400, str(e))
 
-    return OptimizeEditsResponse(**result)
+
+@app.post("/optimize_edits/stream")
+def optimize_edits_stream(req: OptimizeEditsRequest) -> StreamingResponse:
+    """NDJSON stream: progress events while evaluating, then a final result event."""
+    from .solver import solve_optimize_edits
+
+    req.locus = _adjust_locus_to_multiple(req.locus)
+    chrom, des_start, des_end = _resolve_subregion(
+        req.locus,
+        req.design_region,
+        half_default=50,
+        half_bp=req.design_region_half_bp,
+    )
+    design_region_str = f"{chrom}:{des_start}-{des_end}"
+
+    def generate():
+        event_queue: queue.Queue = queue.Queue()
+        result_holder: dict[str, dict] = {}
+        error_holder: list[str] = []
+
+        def progress_cb(current: int, total: int, detail: str) -> None:
+            event_queue.put({
+                "event": "progress",
+                "current": current,
+                "total": total,
+                "text": detail,
+            })
+
+        def run_solver() -> None:
+            try:
+                result_holder["data"] = solve_optimize_edits(
+                    locus=req.locus,
+                    design_region_str=design_region_str,
+                    edit_type=req.edit_type,
+                    objective_head=req.objective_head,
+                    objective_track=req.objective_track,
+                    objective_mode=req.objective_mode,
+                    target_value=req.target_value,
+                    max_edits=req.max_edits,
+                    organism=req.organism,
+                    top_k=req.top_k,
+                    motif_name=req.motif_name,
+                    max_candidates=req.max_candidates,
+                    progress_callback=progress_cb,
+                )
+            except Exception as exc:
+                error_holder.append(str(exc))
+            finally:
+                event_queue.put(None)
+
+        thread = threading.Thread(target=run_solver, daemon=True)
+        thread.start()
+
+        while True:
+            item = event_queue.get()
+            if item is None:
+                break
+            yield json.dumps(item) + "\n"
+
+        thread.join()
+        if error_holder:
+            yield json.dumps({"event": "error", "message": error_holder[0]}) + "\n"
+        else:
+            yield json.dumps({"event": "result", "data": result_holder["data"]}) + "\n"
+
+    return StreamingResponse(generate(), media_type="application/x-ndjson")
 

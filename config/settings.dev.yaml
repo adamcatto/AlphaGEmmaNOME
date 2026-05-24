@@ -8,4 +8,4 @@ server:
 limits:
   # AlphaGenome's input size is fixed at 131072 — smaller inputs won't pass
   # the model's shape checks, so this cap is the model cap (not a dev knob).
-  max_sequence_length: 32768
+  max_sequence_length: 131072
