@@ -21,3 +21,4 @@ services/alphagenome_svc/data/uploads/
 .idea/
 .vscode/
 *.log
+*.ai/
