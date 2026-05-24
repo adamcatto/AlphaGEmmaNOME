@@ -145,5 +145,17 @@
             <li><strong>Unit Testing Verification:</strong> Added a comprehensive regression test <code>test_adjust_locus_to_multiple</code> in <code>tests/test_backend.py</code> to verify that both small expansion (under 16,384 bp) and large contraction (clipping Snap25 from 135kb down to 131,072 bp) function correctly and are perfectly aligned to 2048 bp boundaries. All tests passed.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Classifier Token-Budget Hotfix and Gene-to-Locus Primitive Enablement</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Resolved a critical bug where multi-step pipeline instructions (e.g. looking up a gene using <code>gene_to_locus</code> and then running <code>optimize_edits</code>) repeatedly failed to invoke any tools or generate responses:</p>
+        <ul>
+            <li><strong>Intent Router Cutoff Bug:</strong> Identified that the local LLM (<code>gemma4:e4b</code>) is a thinking model that generates significant internal reasoning inside <code>&lt;think&gt;...&lt;/think&gt;</code> blocks. The intent classifier in <code>services/agent_backend/nodes/intent_router.py</code> was configured with <code>num_predict=64</code>, causing it to run out of generation tokens before it could emit the final classification word (<code>PREDICT</code> or <code>ANSWER</code>). As a result, the classification was returned as blank, defaulting the graph to the <code>ANSWER</code> (conversational) node.</li>
+            <li><strong>Empty Conversational Tool Call Exit:</strong> Under the <code>conversational</code> node, no tools are bound. However, because the user prompt requested tools, the LLM still generated a tool call block. Since the conversational node does not have edges to the tools executor or a synthesizer, the graph exited immediately without producing any text or tool call results, rendering as an empty bubble.</li>
+            <li><strong>Token-Budget Hotfix:</strong> Increased the classifier's token limit to <code>num_predict=512</code> inside <code>_build_llm()</code> in <code>intent_router.py</code>. This leaves ample budget for the model to think and cleanly output the <code>PREDICT</code> classification.</li>
+            <li><strong>Gene-to-Locus Enablement:</strong> Enabled the <code>gene_to_locus</code> primitive tool inside <code>config/tools.yaml</code>, allowing the agent to successfully retrieve genomic coordinates from Ensembl by HGNC symbol when requested as the first step of an optimization task.</li>
+            <li><strong>Unit Testing Verification:</strong> Added <code>test_intent_router_node</code> to <code>tests/test_backend.py</code> to verify router conditional edges and mock LLM classification outputs. All backend tests pass successfully.</li>
+        </ul>
+    </div>
 </body>
 </html>

@@ -29,7 +29,7 @@ def _build_llm() -> ChatOllama:
         model=cfg.model,
         base_url=cfg.base_url,
         temperature=0.0,
-        num_predict=64,
+        num_predict=512,
     )
 
 

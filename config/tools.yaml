@@ -22,7 +22,7 @@ upload_sequence:
 # gene_to_locus → predict_tracks (wrong window) → list_tracks_by_assay loop.
 # Re-enable only for power-user flows with a stronger model.
 gene_to_locus:
-  enabled: false
+  enabled: true
 
 predict_tracks:
   enabled: false

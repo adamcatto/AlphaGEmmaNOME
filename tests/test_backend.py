@@ -203,3 +203,46 @@ def test_adjust_locus_to_multiple():
     assert length_l == 131072  # EXACT max sequence length
     assert length_l % 2048 == 0
 
+
+# ---------------------------------------------------------------------------
+# Part 5: Test Intent Router Node and Classifier Routing
+# ---------------------------------------------------------------------------
+
+def test_intent_router_node():
+    from services.agent_backend.nodes.intent_router import intent_router_node, route_by_intent
+    from langchain_core.messages import HumanMessage, AIMessage
+
+    # Mock State
+    state = {
+        "messages": [
+            HumanMessage(content="Optimize expression of SNAP25"),
+        ],
+        "session_id": "test-session",
+        "intent": None,
+        "viz_specs": [],
+        "step_count": 0,
+    }
+
+    # Test route by intent conditional edge
+    state_predict = {"intent": "predict"}
+    assert route_by_intent(state_predict) == "predict"
+
+    state_answer = {"intent": "answer"}
+    assert route_by_intent(state_answer) == "answer"
+
+    # Mock the LLM inside intent_router_node to return a predicted content
+    with patch("services.agent_backend.nodes.intent_router._build_llm") as mock_build:
+        mock_llm = MagicMock()
+        mock_build.return_value = mock_llm
+
+        # 1. Test routing classifies to predict
+        mock_llm.invoke.return_value = AIMessage(content="PREDICT")
+        res = intent_router_node(state)
+        assert res["intent"] == "predict"
+
+        # 2. Test routing classifies to answer
+        mock_llm.invoke.return_value = AIMessage(content="ANSWER")
+        res = intent_router_node(state)
+        assert res["intent"] == "answer"
+
+
