@@ -117,10 +117,10 @@
         <p class="date">May 24, 2026</p>
         <p>Identified and resolved a shape mismatch error (<code>einops.EinopsError: Shape mismatch, can't divide axis of length 1801 in chunks of 2</code>) caused by arbitrary coordinate/locus sizes in AlphaGenome's deep UNet convolutional downsampling layers:</p>
         <ul>
-            <li>Discovered that AlphaGenome requires sequence lengths to be exact multiples of <strong>2048 bp</strong> due to its multi-stage UNet architectural constraints.</li>
-            <li>Implemented a robust helper function <code>_adjust_locus_to_multiple(locus, multiple=2048)</code> in <code>services/alphagenome_svc/app.py</code> that symmetrically and transparently expands any arbitrary coordinate range to the nearest multiple of 2048 bp.</li>
+            <li>Discovered that AlphaGenome requires sequence lengths to be exact multiples of <strong>2048 bp</strong> due to its multi-stage UNet architectural constraints, and must always be at least <strong>16,384 bp ($2^{14}$ base pairs)</strong> to support full downsampling layers.</li>
+            <li>Implemented a robust helper function <code>_adjust_locus_to_multiple(locus, multiple=2048)</code> in <code>services/alphagenome_svc/app.py</code> that symmetrically and transparently expands any arbitrary coordinate range to at least 16,384 bp and aligns it to the nearest multiple of 2048 bp.</li>
             <li>Applied this automatic coordinate alignment across all AlphaGenome microservice entrypoints: <code>/predict</code>, <code>/attribution</code>, <code>/optimize_sequence</code>, and <code>/optimize_edits</code>.</li>
-            <li>Hot-reloaded the service, successfully verifying that requests with arbitrary locus sizes (like APOE locus of 3602 bp) are dynamically scaled to 4096 bp and execute perfectly, finding deletions with -100.0% silencing efficiency on the actual model.</li>
+            <li>Hot-reloaded the service, successfully verifying that requests with arbitrary locus sizes (like APOE locus of 3,602 bp) are dynamically scaled to 16,384 bp ($2^{14}$) and execute perfectly, finding deletions with -100.0% silencing efficiency on the actual model.</li>
         </ul>
     </div>
 </body>

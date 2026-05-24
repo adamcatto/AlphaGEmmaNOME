@@ -315,9 +315,11 @@ def _parse_locus_coords(locus: str) -> tuple[str, int, int]:
 
 
 def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
-    """Symmetrically expand a locus to be a multiple of `multiple` (e.g. 2048 bp).
+    """Symmetrically expand a locus to be a multiple of `multiple` (e.g. 2048 bp)
+    and at least 16,384 base-pairs (2**14).
     
-    This ensures compatibility with deep UNet convolutional downsampling in the model.
+    This ensures compatibility with deep UNet convolutional downsampling in the model,
+    while satisfying the minimum sequence input length requirement.
     """
     try:
         chrom, start, end = _parse_locus_coords(locus)
@@ -326,22 +328,34 @@ def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
     length = end - start
     if length <= 0:
         return locus
-    if length % multiple == 0:
-        return locus
 
-    needed = multiple - (length % multiple)
-    left_pad = needed // 2
-    right_pad = needed - left_pad
+    # Ensure length is at least 16,384 bp (2**14)
+    min_len = 16384
+    if length < min_len:
+        needed = min_len - length
+        left_pad = needed // 2
+        right_pad = needed - left_pad
+        start = max(1, start - left_pad)
+        end = end + right_pad
+        # If we hit start=1, compensate on the right end to maintain exact min_len
+        actual_len = end - start
+        if actual_len < min_len:
+            end += (min_len - actual_len)
+        length = end - start
 
-    new_start = max(1, start - left_pad)
-    new_end = end + right_pad
+    # Symmetrically expand to next multiple of 2048 if needed
+    if length % multiple != 0:
+        needed = multiple - (length % multiple)
+        left_pad = needed // 2
+        right_pad = needed - left_pad
+        new_start = max(1, start - left_pad)
+        new_end = end + right_pad
+        actual_len = new_end - new_start
+        if actual_len % multiple != 0:
+            new_end += (multiple - (actual_len % multiple))
+        return f"{chrom}:{new_start}-{new_end}"
 
-    # If new_start hit 1, compensate on the right side to preserve exact multiple size
-    actual_len = new_end - new_start
-    if actual_len % multiple != 0:
-        new_end += (multiple - (actual_len % multiple))
-
-    return f"{chrom}:{new_start}-{new_end}"
+    return f"{chrom}:{start}-{end}"
 
 
 def _resolve_subregion(locus: str, sub: str | None, half_default: int) -> tuple[str, int, int]:
