@@ -380,3 +380,17 @@ def get_feedback_export(type: str = "dpo"):
         raise HTTPException(400, "Invalid type. Must be 'dpo' or 'sft'.")
     return export_dataset(type)
 
+
+@app.post("/sessions/{session_id}/history/pop")
+def pop_session_history(session_id: str):
+    session = STORE.get(session_id)
+    if session is None:
+        raise HTTPException(404, "Unknown session.")
+    if len(session.history) >= 2:
+        session.history.pop()  # Pop assistant response
+        session.history.pop()  # Pop user message
+    elif len(session.history) == 1:
+        session.history.pop()
+    return {"status": "ok", "history_length": len(session.history)}
+
+

@@ -62,5 +62,15 @@
             <li>Registered new backend REST endpoints (<code>POST /feedback/preference</code>, <code>POST /feedback/correction</code>, <code>GET /feedback/stats</code>, <code>GET /feedback/export</code>) in <code>services/agent_backend/app.py</code>.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Polished Frontend Feedback & Step Corrections UI</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Built a highly interactive user feedback and expert alignment interface directly in the <code>ChatPane</code> UI:</p>
+        <ul>
+            <li><strong>Inline Thumbs-Up/Down Buttons:</strong> Rendered under each assistant message, enabling immediate logging of pairwise preference pairs (DPO) to the backend.</li>
+            <li><strong>A/B Test Response Regeneration:</strong> Added a "Regenerate Alternative" button for assistant messages that pops the last turn from history via a new <code>POST /sessions/{session_id}/history/pop</code> endpoint and re-runs the streaming generator, caching the prior output as the rejected choice.</li>
+            <li><strong>Interactive Step Corrections:</strong> Integrated a collapsible "Correct Step" edit button for both Thoughts blocks and Tool Calls, opening an editable textarea to modify incorrect reasoning or parameters, and committing the resulting trajectory as gold-standard SFT pairs upon submit.</li>
+        </ul>
+    </div>
 </body>
 </html>
