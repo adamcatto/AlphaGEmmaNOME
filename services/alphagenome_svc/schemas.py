@@ -155,3 +155,42 @@ class OptimizeSequenceResponse(BaseModel):
     reference_signal: float
     top_mutations: list[OptimizeMutation]
     summary: str
+
+
+# ---------------------------------------------------------------------------
+# Genome edit optimization (SNVs, deletions, insertions, motifs)
+# ---------------------------------------------------------------------------
+
+class OptimizeEditsRequest(BaseModel):
+    locus: str
+    design_region: str | None = None
+    edit_type: Literal["snv", "deletion", "insertion", "motif"]
+    objective_head: Head
+    objective_track: int
+    objective_mode: Literal["maximize", "minimize", "target"]
+    target_value: float | None = None
+    max_edits: int = 1
+    organism: Organism = "human"
+    top_k: int = 5
+    # Insertion / motif parameters if needed:
+    motif_name: str | None = None  # e.g., "CTCF" for insertion or ablation
+
+
+class EditedCandidate(BaseModel):
+    mutation_type: str  # "snv", "deletion", "insertion", "motif"
+    position: int       # 1-based genomic coordinate (start of edit)
+    length: int         # length of edit
+    sequence_change: str  # e.g. "C>A" or "del 10bp" or "ins CTCF_motif"
+    predicted_signal: float
+    percent_change: float
+
+
+class OptimizeEditsResponse(BaseModel):
+    locus: str
+    design_region: str
+    objective_head: Head
+    objective_track: int
+    reference_signal: float
+    candidates: list[EditedCandidate]
+    summary: str
+

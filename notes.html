@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OmniGemmaNome Development Notes</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
+        h1 { color: #111; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        h2 { color: #2d7a3f; margin-top: 30px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; }
+        .date { font-weight: bold; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>OmniGemmaNome Implementation Log</h1>
+    <div class="entry">
+        <h2>Initial Setup and notes.html Creation</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Initialized notes.html to document implementation of the Inverse Genome Editing and Agent Alignment Plan.</p>
+    </div>
+    <div class="entry">
+        <h2>Inverse Genome Editing Service and Solvers</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Implemented <code>/optimize_edits</code> endpoint and three advanced inverse state-space solvers:</p>
+        <ul>
+            <li><strong>Beam Search (Multi-site SNVs):</strong> Evaluates single nucleotide mutations using ISM, selects top candidates, and executes a greedy beam search (beam width 3) up to <code>max_edits</code> to identify synergistic mutations.</li>
+            <li><strong>Sliding-Window Deletion Scanner:</strong> Slides a deletion window of lengths 5, 10, 25, and 50 bp across the design region, retaining exact locus sequence lengths by dynamically fetching adjacent genomic bases.</li>
+            <li><strong>Motif-Aware Insertion / Ablation Solver:</strong> Inserts canonical consensus sequences (CTCF, SP1, AP-1, TATA, OCT4, NF-kB) across the design region, or searches for and ablates/deletes matches.</li>
+        </ul>
+        <p>Added requests/responses schemas and integrated everything into <code>services/alphagenome_svc/app.py</code>.</p>
+    </div>
+</body>
+</html>

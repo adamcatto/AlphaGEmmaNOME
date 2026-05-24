@@ -22,6 +22,8 @@ from .schemas import (
     Organism,
     OptimizeSequenceRequest,
     OptimizeSequenceResponse,
+    OptimizeEditsRequest,
+    OptimizeEditsResponse,
     PerBaseScores,
     PredictRequest,
     PredictResponse,
@@ -510,3 +512,33 @@ def optimize_sequence(req: OptimizeSequenceRequest) -> OptimizeSequenceResponse:
         ],
         summary=summary,
     )
+
+
+@app.post("/optimize_edits", response_model=OptimizeEditsResponse)
+def optimize_edits(req: OptimizeEditsRequest) -> OptimizeEditsResponse:
+    from .solver import solve_optimize_edits
+
+    chrom, des_start, des_end = _resolve_subregion(
+        req.locus, req.design_region, half_default=50
+    )
+    design_region_str = f"{chrom}:{des_start}-{des_end}"
+
+    try:
+        result = solve_optimize_edits(
+            locus=req.locus,
+            design_region_str=design_region_str,
+            edit_type=req.edit_type,
+            objective_head=req.objective_head,
+            objective_track=req.objective_track,
+            objective_mode=req.objective_mode,
+            target_value=req.target_value,
+            max_edits=req.max_edits,
+            organism=req.organism,
+            top_k=req.top_k,
+            motif_name=req.motif_name,
+        )
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+    return OptimizeEditsResponse(**result)
+
