@@ -72,5 +72,15 @@
             <li><strong>Interactive Step Corrections:</strong> Integrated a collapsible "Correct Step" edit button for both Thoughts blocks and Tool Calls, opening an editable textarea to modify incorrect reasoning or parameters, and committing the resulting trajectory as gold-standard SFT pairs upon submit.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Integrated Alignment Portal & Dashboard</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Created a comprehensive full-screen sidebar portal in the frontend for active dataset management and data exports:</p>
+        <ul>
+            <li>Created <code>frontend/src/components/AlignmentDashboard.tsx</code> containing a beautiful dashboard with high-visibility metrics cards, tabbed list views of logged preferences and corrections, and instant export buttons.</li>
+            <li>Added detailed inspection modals that render side-by-side split comparison of chosen vs. rejected trajectories or original attempts vs. expert SFT corrections.</li>
+            <li>Registered a persistent <code>🛡️ Alignment Portal</code> tab button in <code>VizPane.tsx</code> to toggle between standard tracks visualization views and the dashboard.</li>
+        </ul>
+    </div>
 </body>
 </html>
