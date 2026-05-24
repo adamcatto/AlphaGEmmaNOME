@@ -44,10 +44,21 @@ export default function ChatPane() {
           }));
         } else if (type === "progress") {
           const entry = data as ProgressEntry;
-          updateLast((m) => ({
-            ...m,
-            progress: [...(m.progress ?? []), entry],
-          }));
+          updateLast((m) => {
+            const progress = [...(m.progress ?? [])];
+            const last = progress[progress.length - 1];
+            if (
+              last &&
+              last.stage === entry.stage &&
+              entry.stage === "optimize_edits" &&
+              entry.current != null
+            ) {
+              progress[progress.length - 1] = entry;
+            } else {
+              progress.push(entry);
+            }
+            return { ...m, progress };
+          });
         } else if (type === "tool_call_start") {
           const { tool, arguments: args } = data as { tool: string; arguments?: unknown };
           updateLast((m) => ({
@@ -216,10 +227,22 @@ function ProgressList({ entries }: { entries: ProgressEntry[] }) {
             : e.stage.endsWith("_done")
               ? "#2d7a3f"
               : "#8a6d00";
+        const hasBar =
+          e.current != null && e.total != null && e.total > 0;
+        const pct = hasBar
+          ? Math.min(100, Math.round((e.current! / e.total!) * 100))
+          : 0;
         return (
           <div key={i} style={styles.progressRow}>
             <span style={{ ...styles.progressDot, background: dotColor }} />
-            <span>{e.text}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span>{e.text}</span>
+              {hasBar && (
+                <div style={styles.progressBarTrack} aria-label={`${e.current} of ${e.total}`}>
+                  <div style={{ ...styles.progressBarFill, width: `${pct}%` }} />
+                </div>
+              )}
+            </div>
           </div>
         );
       })}
@@ -452,6 +475,20 @@ const styles: Record<string, any> = {
     height: 6,
     borderRadius: "50%",
     display: "inline-block",
+    flexShrink: 0,
+  },
+  progressBarTrack: {
+    marginTop: 4,
+    height: 4,
+    background: "#d8e2f8",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    background: "#1f6feb",
+    borderRadius: 2,
+    transition: "width 0.2s ease",
   },
   toolList: { display: "flex", flexDirection: "column", gap: 3, marginBottom: 6 },
   toolCall: { border: "1px solid #eee", borderRadius: 4, background: "#fff" },

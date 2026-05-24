@@ -53,6 +53,12 @@ export default function TrackViewer({ spec }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Zoom range states (bin indices)
+  const [zoomStart, setZoomStart] = useState<number | null>(null);
+  const [zoomEnd, setZoomEnd] = useState<number | null>(null);
+  const [inputStart, setInputStart] = useState("");
+  const [inputEnd, setInputEnd] = useState("");
+
   useEffect(() => {
     if (!sessionId || !spec.head) {
       setData(null);
@@ -73,6 +79,9 @@ export default function TrackViewer({ spec }: Props) {
         if (!cancelled) {
           setData(r);
           setCompareData(rc);
+          // Reset zoom range if the underlying sequence changes length
+          setZoomStart(null);
+          setZoomEnd(null);
         }
       })
       .catch((e) => {
@@ -93,22 +102,177 @@ export default function TrackViewer({ spec }: Props) {
   const axisHeight = 28;
   const sidePad = 140;
 
+  const N = useMemo(() => {
+    if (data && data.tracks.length > 0) {
+      return data.tracks[0].values.length;
+    }
+    return 0;
+  }, [data]);
+
+  const activeStart = zoomStart !== null ? zoomStart : 0;
+  const activeEnd = zoomEnd !== null ? zoomEnd : (N > 0 ? N - 1 : 0);
+
+  const zoomedLocus = useMemo(() => {
+    if (!locus || N === 0) return locus;
+    const span = locus.end - locus.start;
+    return {
+      chrom: locus.chrom,
+      start: Math.round(locus.start + (activeStart / N) * span),
+      end: Math.round(locus.start + ((activeEnd + 1) / N) * span),
+    };
+  }, [locus, activeStart, activeEnd, N]);
+
+  // Symmetrical Zoom In
+  const zoomIn = () => {
+    if (N <= 3) return;
+    const len = activeEnd - activeStart + 1;
+    if (len <= 3) return;
+    const shrink = Math.max(1, Math.round(len * 0.15)); // shrink 15% on each side
+    const nextStart = Math.min(activeEnd - 2, activeStart + shrink);
+    const nextEnd = Math.max(activeStart + 2, activeEnd - shrink);
+    setZoomStart(nextStart);
+    setZoomEnd(nextEnd);
+  };
+
+  // Symmetrical Zoom Out
+  const zoomOut = () => {
+    if (N === 0) return;
+    const len = activeEnd - activeStart + 1;
+    const expand = Math.max(1, Math.round(len * 0.25)); // expand 25% on each side
+    const nextStart = Math.max(0, activeStart - expand);
+    const nextEnd = Math.min(N - 1, activeEnd + expand);
+    if (nextStart === 0 && nextEnd === N - 1) {
+      setZoomStart(null);
+      setZoomEnd(null);
+    } else {
+      setZoomStart(nextStart);
+      setZoomEnd(nextEnd);
+    }
+  };
+
+  const resetZoom = () => {
+    setZoomStart(null);
+    setZoomEnd(null);
+  };
+
+  // Synchronize inputs with actual active zoom indices
+  useEffect(() => {
+    if (N > 0) {
+      setInputStart(String(activeStart));
+      setInputEnd(String(activeEnd));
+    }
+  }, [activeStart, activeEnd, N]);
+
+  const handleRangeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const start = parseInt(inputStart, 10);
+    const end = parseInt(inputEnd, 10);
+    if (!isNaN(start) && !isNaN(end) && start >= 0 && end < N && end - start >= 2) {
+      setZoomStart(start);
+      setZoomEnd(end);
+    } else {
+      setInputStart(String(activeStart));
+      setInputEnd(String(activeEnd));
+    }
+  };
+
+  // Handle hotkeys (CMD/CTRL + "=" for zoom in, CMD/CTRL + "-" for zoom out)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const hasModifier = isMac ? e.metaKey : e.ctrlKey;
+      if (hasModifier) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault();
+          zoomIn();
+        } else if (e.key === "-") {
+          e.preventDefault();
+          zoomOut();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeStart, activeEnd, N]);
+
+  const handleZoomFromRow = (start: number, end: number) => {
+    setZoomStart(start);
+    setZoomEnd(end);
+  };
+
+  const isZoomed = zoomStart !== null || zoomEnd !== null;
+
   return (
     <div style={styles.root}>
       <header style={styles.header}>
-        <div style={styles.headerTitle}>
-          <span style={styles.headBadge(colorFor(spec.head ?? "")[0])}>{spec.head ?? "—"}</span>
-          <span style={styles.locusText}>{data?.locus ?? spec.locus ?? "—"}</span>
+        <div style={styles.headerLeft}>
+          <div style={styles.headerTitle}>
+            <span style={styles.headBadge(colorFor(spec.head ?? "")[0])}>{spec.head ?? "—"}</span>
+            <span style={styles.locusText}>{data?.locus ?? spec.locus ?? "—"}</span>
+          </div>
+          <div style={styles.meta}>
+            {data
+              ? `${data.tracks.length} tracks · ${data.downsampled_to}/${data.positions} pts · ${data.resolution ?? "—"}`
+              : loading
+                ? "loading…"
+                : error
+                  ? "error"
+                  : ""}
+          </div>
         </div>
-        <div style={styles.meta}>
-          {data
-            ? `${data.tracks.length} tracks · ${data.downsampled_to}/${data.positions} pts · ${data.resolution ?? "—"}`
-            : loading
-              ? "loading…"
-              : error
-                ? "error"
-                : ""}
-        </div>
+
+        {N > 0 && (
+          <div style={styles.zoomPanel}>
+            <form onSubmit={handleRangeSubmit} style={styles.rangeForm}>
+              <span style={styles.formLabel}>Bins:</span>
+              <input
+                type="number"
+                value={inputStart}
+                onChange={(e) => setInputStart(e.target.value)}
+                style={styles.rangeInput}
+                min={0}
+                max={N - 1}
+              />
+              <span style={styles.formLabel}>to</span>
+              <input
+                type="number"
+                value={inputEnd}
+                onChange={(e) => setInputEnd(e.target.value)}
+                style={styles.rangeInput}
+                min={0}
+                max={N - 1}
+              />
+              <button type="submit" style={styles.goButton}>Go</button>
+            </form>
+
+            <div style={styles.buttonGroup}>
+              <button
+                onClick={zoomOut}
+                title="Zoom Out (Ctrl/Cmd + -)"
+                style={styles.zoomButton}
+              >
+                Zoom −
+              </button>
+              <button
+                onClick={zoomIn}
+                title="Zoom In (Ctrl/Cmd + =)"
+                style={styles.zoomButton}
+              >
+                Zoom +
+              </button>
+              <button
+                onClick={resetZoom}
+                disabled={!isZoomed}
+                style={{
+                  ...styles.zoomButton,
+                  ...(isZoomed ? styles.resetActive : styles.resetDisabled),
+                }}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <div style={styles.scroll}>
@@ -130,15 +294,18 @@ export default function TrackViewer({ spec }: Props) {
                 height={rowHeight}
                 sidePad={sidePad}
                 isLast={i === data.tracks.length - 1}
+                activeStart={activeStart}
+                activeEnd={activeEnd}
+                onZoom={handleZoomFromRow}
               />
             );
           })}
-        {data && locus && (
+        {data && locus && zoomedLocus && (
           <AxisRow
             width={width}
             height={axisHeight}
             sidePad={sidePad}
-            locus={locus}
+            locus={zoomedLocus}
           />
         )}
       </div>
@@ -202,13 +369,34 @@ interface RowProps {
   height: number;
   sidePad: number;
   isLast: boolean;
+  activeStart: number;
+  activeEnd: number;
+  onZoom: (start: number, end: number) => void;
 }
 
-function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }: RowProps) {
+function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast, activeStart, activeEnd, onZoom }: RowProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hover, setHover] = useState<{ x: number; v: number; cv?: number; frac: number } | null>(null);
 
+  // Click & drag selection states
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragCurrent, setDragCurrent] = useState<number | null>(null);
+
   const [stroke, fill] = colorFor(head);
+
+  // Slice the data vectors to the visible bin indices
+  const visibleValues = useMemo(() => {
+    return row.values.slice(activeStart, activeEnd + 1);
+  }, [row.values, activeStart, activeEnd]);
+
+  const visibleCompareValues = useMemo(() => {
+    if (compareRow && compareRow.values && compareRow.values.length > 0) {
+      return compareRow.values.slice(activeStart, activeEnd + 1);
+    }
+    return undefined;
+  }, [compareRow, activeStart, activeEnd]);
+
+  const visibleCount = visibleValues.length;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -224,9 +412,15 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, plotW, height);
 
-    const values = row.values;
+    const values = visibleValues;
     if (values.length === 0) return;
-    const maxV = Math.max(row.max, compareRow ? compareRow.max : 0, 1e-9);
+
+    // Local autoscale over the active visible range
+    const maxV = Math.max(
+      Math.max(...values),
+      visibleCompareValues ? Math.max(...visibleCompareValues) : 0,
+      1e-9
+    );
 
     const n = values.length;
     const padTop = 4;
@@ -238,11 +432,13 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
     ctx.beginPath();
     ctx.moveTo(0, baselineY);
     for (let i = 0; i < n; i++) {
-      const x = (i / (n - 1)) * plotW;
+      const x = n > 1 ? (i / (n - 1)) * plotW : 0;
       const y = baselineY - (values[i] / maxV) * plotH;
       ctx.lineTo(x, y);
     }
-    ctx.lineTo(plotW, baselineY);
+    if (n > 1) {
+      ctx.lineTo(plotW, baselineY);
+    }
     ctx.closePath();
     ctx.fill();
 
@@ -250,7 +446,7 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
-      const x = (i / (n - 1)) * plotW;
+      const x = n > 1 ? (i / (n - 1)) * plotW : 0;
       const y = baselineY - (values[i] / maxV) * plotH;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
@@ -258,15 +454,15 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
     ctx.stroke();
 
     // Draw compareRow if present (as a dashed bright red line)
-    if (compareRow && compareRow.values && compareRow.values.length > 0) {
-      const cValues = compareRow.values;
+    if (visibleCompareValues && visibleCompareValues.length > 0) {
+      const cValues = visibleCompareValues;
       const cN = cValues.length;
       ctx.strokeStyle = "#ff3b30";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
       for (let i = 0; i < cN; i++) {
-        const x = (i / (cN - 1)) * plotW;
+        const x = cN > 1 ? (i / (cN - 1)) * plotW : 0;
         const y = baselineY - (cValues[i] / maxV) * plotH;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -282,11 +478,22 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
     ctx.moveTo(0, baselineY + 0.5);
     ctx.lineTo(plotW, baselineY + 0.5);
     ctx.stroke();
-  }, [row.values, row.max, compareRow, stroke, fill, width, height, sidePad]);
+  }, [visibleValues, visibleCompareValues, stroke, fill, width, height, sidePad]);
 
   const plotW = width - sidePad - 16;
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Left click only
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const frac = Math.max(0, Math.min(1, x / plotW));
+    const localIdx = Math.round(frac * (visibleCount - 1));
+    const globalIdx = activeStart + localIdx;
+    setDragStart(globalIdx);
+    setDragCurrent(globalIdx);
+  };
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     if (x < 0 || x > plotW) {
@@ -294,15 +501,55 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
       return;
     }
     const frac = Math.max(0, Math.min(1, x / plotW));
-    const idx = Math.round(frac * (row.values.length - 1));
-    const cIdx = compareRow && compareRow.values ? Math.round(frac * (compareRow.values.length - 1)) : -1;
+    const localIdx = Math.round(frac * (visibleCount - 1));
+    const globalIdx = activeStart + localIdx;
+
+    if (dragStart !== null) {
+      setDragCurrent(globalIdx);
+    }
+
     setHover({
       x,
-      v: row.values[idx],
-      cv: compareRow && compareRow.values && cIdx >= 0 ? compareRow.values[cIdx] : undefined,
-      frac,
+      v: row.values[globalIdx],
+      cv: compareRow && compareRow.values ? compareRow.values[globalIdx] : undefined,
+      frac: globalIdx / (row.values.length - 1),
     });
   };
+
+  const onMouseUp = () => {
+    if (dragStart !== null && dragCurrent !== null) {
+      const start = Math.min(dragStart, dragCurrent);
+      const end = Math.max(dragStart, dragCurrent);
+      if (end - start >= 2) {
+        onZoom(start, end);
+      }
+    }
+    setDragStart(null);
+    setDragCurrent(null);
+  };
+
+  const onMouseLeave = () => {
+    setHover(null);
+    setDragStart(null);
+    setDragCurrent(null);
+  };
+
+  // Convert global bin index back to horizontal pixel coordinate on screen
+  const getXForGlobalIdx = (globalIdx: number) => {
+    if (visibleCount <= 1) return 0;
+    const localIdx = globalIdx - activeStart;
+    const frac = localIdx / (visibleCount - 1);
+    return frac * plotW;
+  };
+
+  const dragLeft = dragStart !== null && dragCurrent !== null ? Math.min(getXForGlobalIdx(dragStart), getXForGlobalIdx(dragCurrent)) : 0;
+  const dragRight = dragStart !== null && dragCurrent !== null ? Math.max(getXForGlobalIdx(dragStart), getXForGlobalIdx(dragCurrent)) : 0;
+  const dragWidth = dragRight - dragLeft;
+
+  // Percentage of position inside the current zoom window
+  const hoverLocalPct = hover && visibleCount > 1
+    ? (Math.round((hover.frac * (row.values.length - 1) - activeStart)) / (visibleCount - 1)) * 100
+    : 0;
 
   return (
     <div
@@ -313,23 +560,46 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
     >
       <TrackLabelView row={row} sidePad={sidePad} />
       <div
-        style={{ position: "relative", width: plotW, height }}
-        onMouseMove={onMove}
-        onMouseLeave={() => setHover(null)}
+        style={{ position: "relative", width: plotW, height, cursor: "crosshair", userSelect: "none" }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
       >
         <canvas ref={canvasRef} />
+        {dragStart !== null && dragCurrent !== null && dragWidth > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: dragLeft,
+              width: dragWidth,
+              background: "rgba(31, 111, 235, 0.15)",
+              borderLeft: "1px solid #1f6feb",
+              borderRight: "1px solid #1f6feb",
+              pointerEvents: "none",
+              zIndex: 5,
+            }}
+          />
+        )}
         {hover && (
           <>
             <div style={{ ...styles.hoverLine, left: hover.x }} />
             <div
               style={{
                 ...styles.hoverBox,
-                left: Math.min(hover.x + 8, plotW - 140),
+                left: Math.min(hover.x + 8, plotW - 160),
+                zIndex: 10,
               }}
             >
+              <div style={{ fontWeight: 600 }}>Bin {activeStart + Math.round((hover.frac * (row.values.length - 1) - activeStart))}</div>
               <div>ref: {hover.v.toFixed(3)}</div>
               {hover.cv !== undefined && <div style={{ color: "#ff8b80" }}>edit: {hover.cv.toFixed(3)}</div>}
-              <div style={styles.hoverFrac}>{(hover.frac * 100).toFixed(1)}% of window</div>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", marginTop: 3, paddingTop: 3 }}>
+                zoom: {hoverLocalPct.toFixed(1)}%
+              </div>
+              <div style={styles.hoverFrac}>full: {(hover.frac * 100).toFixed(1)}%</div>
             </div>
           </>
         )}
@@ -383,10 +653,20 @@ function AxisRow({
 const styles: {
   root: React.CSSProperties;
   header: React.CSSProperties;
+  headerLeft: React.CSSProperties;
   headerTitle: React.CSSProperties;
   headBadge: (c: string) => React.CSSProperties;
   locusText: React.CSSProperties;
   meta: React.CSSProperties;
+  zoomPanel: React.CSSProperties;
+  rangeForm: React.CSSProperties;
+  formLabel: React.CSSProperties;
+  rangeInput: React.CSSProperties;
+  goButton: React.CSSProperties;
+  buttonGroup: React.CSSProperties;
+  zoomButton: React.CSSProperties;
+  resetActive: React.CSSProperties;
+  resetDisabled: React.CSSProperties;
   scroll: React.CSSProperties;
   row: React.CSSProperties;
   rowLabel: React.CSSProperties;
@@ -414,9 +694,16 @@ const styles: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "10px 14px",
+    padding: "8px 14px",
     borderBottom: "1px solid #e5e8ee",
     background: "#fff",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  headerLeft: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
   },
   headerTitle: { display: "flex", alignItems: "center", gap: 10 },
   headBadge: (c: string) => ({
@@ -431,6 +718,64 @@ const styles: {
   }),
   locusText: { fontSize: 13, fontFamily: "monospace", color: "#333" },
   meta: { fontSize: 11, color: "#888", fontFamily: "monospace" },
+  zoomPanel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
+  rangeForm: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: 11,
+    color: "#444",
+  },
+  formLabel: {
+    fontWeight: 500,
+  },
+  rangeInput: {
+    width: 54,
+    fontSize: 11,
+    padding: "2px 4px",
+    border: "1px solid #ccc",
+    borderRadius: 3,
+    textAlign: "center",
+    fontFamily: "monospace",
+  },
+  goButton: {
+    fontSize: 11,
+    padding: "2px 8px",
+    background: "#24292f",
+    color: "#fff",
+    border: "1px solid #24292f",
+    borderRadius: 3,
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+  buttonGroup: {
+    display: "flex",
+    gap: 4,
+  },
+  zoomButton: {
+    fontSize: 11,
+    padding: "3px 8px",
+    background: "#f6f8fa",
+    border: "1px solid #d0d7de",
+    borderRadius: 4,
+    cursor: "pointer",
+    color: "#24292f",
+    fontWeight: 500,
+  },
+  resetActive: {
+    background: "#fef2f2",
+    borderColor: "#fecaca",
+    color: "#991b1b",
+    fontWeight: 600,
+  },
+  resetDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed",
+  },
   scroll: { flex: 1, overflow: "auto", padding: "8px 12px" },
   row: {
     display: "flex",

@@ -7,6 +7,7 @@ export type VizPanelType =
 export interface VizSpec {
   type: VizPanelType;
   prediction_id: string;
+  compare_prediction_id?: string;
   locus: string | null;
   head: string | null;
   track_indices: number[] | null;
@@ -32,6 +33,8 @@ export interface ToolCall {
 export interface ProgressEntry {
   stage: string;
   text: string;
+  current?: number;
+  total?: number;
 }
 
 export interface ChatMessage {
