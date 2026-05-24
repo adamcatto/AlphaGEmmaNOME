@@ -169,5 +169,25 @@
             <li><strong>Verification:</strong> Updated <code>test_adjust_locus_to_multiple</code> in <code>tests/test_backend.py</code> to expect the new $32,768\text{ bp}$ boundaries. Ran `pytest` to confirm that all test cases pass perfectly.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Interactive Hover Tooltips in Track Viewer</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Satisfied the frontend requirement to dynamically display the full name of genomic tracks upon hovering over their label in the Tracks Viewer:</p>
+        <ul>
+            <li>Created a custom sub-component <code>TrackLabelView</code> inside <code>frontend/src/components/TrackViewer.tsx</code> that intercepts mouse events using <code>onMouseEnter</code> and <code>onMouseLeave</code>.</li>
+            <li>When hovered, the track label main text transitions to an absolutely positioned overlay with <code>zIndex: 100</code>, high-contrast text, a clean border, white-space wrapping, and a soft dropdown shadow, allowing full cell type, biosample, and target names to render seamlessly.</li>
+            <li>Kept an invisible copy of the label in normal document flow as a layout placeholder to prevent layout shifting or graph compression when the text elevates to the overlay plane.</li>
+        </ul>
+    </div>
+    <div class="entry">
+        <h2>Standardized Log Propagation Hotfix for Background Services</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Resolved the missing console/terminal logs issue by configuring centralized log level propagation on startup:</p>
+        <ul>
+            <li><strong>Root Cause Analysis:</strong> Discovered that python's root logger defaults to <code>WARNING</code> level when started from uvicorn without explicit configuration. This silently dropped all <code>logger.info()</code> calls in <code>solver.py</code> (including progress updates, percentages, and ETAs).</li>
+            <li><strong>Early Logging Binding:</strong> Integrated explicit configuration loading in both <code>services/alphagenome_svc/app.py</code> and <code>services/agent_backend/app.py</code> by parsing and applying <code>config/logging.yaml</code> via <code>logging.config.dictConfig</code> at module import-time.</li>
+            <li>This ensures log levels and stream handlers are cleanly propagated to stdout/stderr inside the active terminals, making the real-time progress bar, percentage completions, and dynamic ETAs fully visible during long-running genomic edits optimization.</li>
+        </ul>
+    </div>
 </body>
 </html>

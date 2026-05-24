@@ -146,6 +146,54 @@ export default function TrackViewer({ spec }: Props) {
   );
 }
 
+function TrackLabelView({ row, sidePad }: { row: TrackRow; sidePad: number }) {
+  const [hovered, setHovered] = useState(false);
+  const label = trackLabel(row);
+
+  return (
+    <div
+      style={{
+        ...styles.rowLabel,
+        width: sidePad - 8,
+        position: "relative",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div
+        title={label}
+        style={{
+          ...styles.labelMain,
+          ...(hovered ? {
+            position: "absolute",
+            zIndex: 100,
+            background: "#ffffff",
+            padding: "4px 8px",
+            border: "1px solid #d0d7de",
+            borderRadius: "6px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            width: "max-content",
+            maxWidth: "320px",
+            left: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#1f2328",
+            fontSize: "12px",
+            fontWeight: 500,
+          } : {})
+        }}
+      >
+        {label}
+      </div>
+      {/* Invisible placeholder to reserve height when absolute positioned */}
+      <div style={{ ...styles.labelMain, visibility: "hidden" }}>{label}</div>
+      <div style={styles.labelSub}>idx {row.track_index} · max {row.max.toFixed(2)}</div>
+    </div>
+  );
+}
+
 interface RowProps {
   row: TrackRow;
   compareRow?: TrackRow;
@@ -263,10 +311,7 @@ function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }:
         borderBottom: isLast ? "none" : "1px solid #eef0f4",
       }}
     >
-      <div style={{ ...styles.rowLabel, width: sidePad - 8 }}>
-        <div style={styles.labelMain}>{trackLabel(row)}</div>
-        <div style={styles.labelSub}>idx {row.track_index} · max {row.max.toFixed(2)}</div>
-      </div>
+      <TrackLabelView row={row} sidePad={sidePad} />
       <div
         style={{ position: "relative", width: plotW, height }}
         onMouseMove={onMove}

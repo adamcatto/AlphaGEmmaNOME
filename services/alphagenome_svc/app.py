@@ -3,13 +3,26 @@ from __future__ import annotations
 import base64
 import csv
 import logging
+import logging.config
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import numpy as np
+import yaml
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+
+# Load logging configuration as early as possible
+_log_cfg_path = Path(__file__).resolve().parent.parent.parent / "config" / "logging.yaml"
+if _log_cfg_path.exists():
+    try:
+        with _log_cfg_path.open() as _f:
+            _log_cfg = yaml.safe_load(_f)
+            logging.config.dictConfig(_log_cfg)
+    except Exception as _e:
+        print(f"Failed to load logging config from {_log_cfg_path}: {_e}")
 
 from schema import load_settings
 
