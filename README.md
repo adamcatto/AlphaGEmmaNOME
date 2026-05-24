@@ -19,7 +19,7 @@ docs/                Agent-facing tool reference
 Assets live outside git. One-time:
 
 ```bash
-./scripts/pull_ollama_model.sh     # ollama pull gemma:2b
+./scripts/pull_ollama_model.sh     # ollama pull gemma4:e4b
 ./scripts/download_model.sh        # AlphaGenome all-folds weights from HF Hub
 ./scripts/download_genome.sh       # hg38.fa + index
 ```
