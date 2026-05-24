@@ -217,6 +217,9 @@ def predict(req: PredictRequest) -> PredictResponse:
     if model is None:
         raise HTTPException(503, "AlphaGenome weights not loaded.")
 
+    if req.locus is not None:
+        req.locus = _adjust_locus_to_multiple(req.locus)
+
     if req.sequence is not None:
         sequence = req.sequence.upper()
     else:
@@ -311,6 +314,36 @@ def _parse_locus_coords(locus: str) -> tuple[str, int, int]:
     return chrom, int(start_s), int(end_s)
 
 
+def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
+    """Symmetrically expand a locus to be a multiple of `multiple` (e.g. 2048 bp).
+    
+    This ensures compatibility with deep UNet convolutional downsampling in the model.
+    """
+    try:
+        chrom, start, end = _parse_locus_coords(locus)
+    except Exception:
+        return locus
+    length = end - start
+    if length <= 0:
+        return locus
+    if length % multiple == 0:
+        return locus
+
+    needed = multiple - (length % multiple)
+    left_pad = needed // 2
+    right_pad = needed - left_pad
+
+    new_start = max(1, start - left_pad)
+    new_end = end + right_pad
+
+    # If new_start hit 1, compensate on the right side to preserve exact multiple size
+    actual_len = new_end - new_start
+    if actual_len % multiple != 0:
+        new_end += (multiple - (actual_len % multiple))
+
+    return f"{chrom}:{new_start}-{new_end}"
+
+
 def _resolve_subregion(locus: str, sub: str | None, half_default: int) -> tuple[str, int, int]:
     """Return (chrom, start, end) for the ISM sub-region."""
     locus_chrom, locus_start, locus_end = _parse_locus_coords(locus)
@@ -333,6 +366,8 @@ def attribution(req: AttributionRequest) -> AttributionResponse:
     model = get_model()
     if model is None:
         raise HTTPException(503, "AlphaGenome weights not loaded.")
+
+    req.locus = _adjust_locus_to_multiple(req.locus)
 
     try:
         ref_seq = fetch_sequence(req.locus, settings.paths.genome_fasta)
@@ -429,6 +464,8 @@ def optimize_sequence(req: OptimizeSequenceRequest) -> OptimizeSequenceResponse:
     if model is None:
         raise HTTPException(503, "AlphaGenome weights not loaded.")
 
+    req.locus = _adjust_locus_to_multiple(req.locus)
+
     try:
         ref_seq = fetch_sequence(req.locus, settings.paths.genome_fasta)
     except FileNotFoundError:
@@ -517,6 +554,8 @@ def optimize_sequence(req: OptimizeSequenceRequest) -> OptimizeSequenceResponse:
 @app.post("/optimize_edits", response_model=OptimizeEditsResponse)
 def optimize_edits(req: OptimizeEditsRequest) -> OptimizeEditsResponse:
     from .solver import solve_optimize_edits
+
+    req.locus = _adjust_locus_to_multiple(req.locus)
 
     chrom, des_start, des_end = _resolve_subregion(
         req.locus, req.design_region, half_default=50
