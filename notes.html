@@ -29,5 +29,16 @@
         </ul>
         <p>Added requests/responses schemas and integrated everything into <code>services/alphagenome_svc/app.py</code>.</p>
     </div>
+    <div class="entry">
+        <h2>OptimizeEdits Agent Tool Integration</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Created and integrated the <code>OptimizeEdits</code> agent tool:</p>
+        <ul>
+            <li>Created <code>services/agent_backend/tools/genome_edits.py</code> implementing the <code>SessionAwareTool</code> subclass with standard input schema mapping to the AlphaGenome solver.</li>
+            <li>Added the <code>OptimizeEditsInput</code> Pydantic model for LangChain/LangGraph adapter in <code>services/agent_backend/tools/langchain_adapter.py</code>.</li>
+            <li>Registered the tool in the central <code>build_tool_list()</code> and <code>tools/__init__.py</code>.</li>
+            <li>Enabled the tool in <code>config/tools.yaml</code>, allowing the LangGraph agent to autonomously solve inverse genomic design requests.</li>
+        </ul>
+    </div>
 </body>
 </html>

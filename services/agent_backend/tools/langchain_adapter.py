@@ -242,6 +242,20 @@ class AnalyzeGtexExpressionMacroInput(BaseModel):
     top_k: int = Field(5, description="Number of highest/lowest expressing tissues to highlight.")
 
 
+class OptimizeEditsInput(BaseModel):
+    locus: str = Field(description="Full genomic locus 'chrN:start-end' containing the editing window.")
+    edit_type: str = Field(description="Type of edit to search: 'snv' (substitutions), 'deletion' (sliding window), 'insertion' (insert consensus motif), or 'motif' (ablate or insert matched motifs).")
+    objective_head: str = Field(description="Target AlphaGenome head, e.g. 'atac', 'cage', 'rna_seq', 'chip_tf'.")
+    objective_track: int = Field(description="Track index within the head.")
+    objective_mode: str = Field(description="Optimization goal: 'maximize' (increase signal), 'minimize' (silence/decrease), or 'target' (match a specific value).")
+    design_region: str | None = Field(None, description="Sub-region 'chrN:start-end' (≤100 bp recommended) to apply edits. Defaults to ±50 bp around the locus center.")
+    target_value: float | None = Field(None, description="Target numeric value for the signal (required when objective_mode is 'target').")
+    max_edits: int = Field(1, description="Maximum number of simultaneous edits (e.g., up to 3 for SNVs). Default 1.")
+    organism: str = Field("human", description="'human' or 'mouse'. Default 'human'.")
+    top_k: int = Field(5, description="Number of top candidates to return. Default 5.")
+    motif_name: str | None = Field(None, description="Transcription factor motif name to insert or ablate (e.g. 'CTCF', 'SP1', 'AP-1', 'TATA', 'OCT4', 'NF-kB').")
+
+
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
@@ -303,6 +317,7 @@ def build_tool_list() -> list[StructuredTool]:
         AnalyzeVariantEffect,
     )
     from .sequence_design import OptimizeSequence
+    from .genome_edits import OptimizeEdits
     from .splice import AnalyzeSplicing
     from .tiled_scan import AnalyzeLargeRegion
     from .tracks import ListTracksByAssay
@@ -348,6 +363,7 @@ def build_tool_list() -> list[StructuredTool]:
         # Phase 3 primitives (ISM-based — slow, disabled by default)
         (AnalyzeAttribution, "analyze_attribution", AnalyzeAttributionInput),
         (OptimizeSequence, "optimize_sequence", OptimizeSequenceInput),
+        (OptimizeEdits, "optimize_edits", OptimizeEditsInput),
     ]
 
     cfg = load_settings().tools

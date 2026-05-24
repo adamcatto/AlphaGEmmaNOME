@@ -30,6 +30,7 @@ from .macros import (
     AnalyzeVariantEffect,
 )
 from .sequence_design import OptimizeSequence
+from .genome_edits import OptimizeEdits
 from .splice import AnalyzeSplicing
 from .tiled_scan import AnalyzeLargeRegion
 from .tracks import ListTracksByAssay
@@ -76,4 +77,5 @@ __all__ = [
     # Phase 3 primitives
     "AnalyzeAttribution",
     "OptimizeSequence",
+    "OptimizeEdits",
 ]

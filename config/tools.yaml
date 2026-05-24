@@ -100,3 +100,7 @@ analyze_attribution:
 
 optimize_sequence:
   enabled: false
+
+optimize_edits:
+  enabled: true
+
