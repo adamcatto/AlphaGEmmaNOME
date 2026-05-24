@@ -67,12 +67,15 @@ Scaffold. AlphaGenome track metadata is a placeholder — see [services/alphagen
 We have extended OmniGemmaNome with a powerful inverse-design genomic editing engine and a full closed-loop human-feedback + automated alignment (RLAIF) pipeline.
 
 ### 🧬 Inverse Genome Editing Engine
-An advanced unified solver supports multiple edit styles to achieve target functional objectives (maximizing, minimizing, or matching specific values on regulatory tracks):
+An advanced unified solver supports multiple edit styles to achieve target functional objectives (maximizing, minimizing, or matching specific values on regulatory tracks). The solver evaluates proposed edits based on their **Log2 Fold-Change (LFC)** over the no-edit baseline reference signal, rather than raw differential signals, to more accurately represent biological impact. Signal tracking and LFC computation are centered precisely around the edit site by taking the mean signal of the **3 center bins** of the spatial dimension(s) instead of averaging the entire sequence track.
+
+Supported edit styles include:
 * **Beam Search (Multi-site SNVs):** Greedily searches combinations of up to $N$ synergistic SNV substitutions evaluated by In-Silico Mutagenesis (ISM) to find optimal multi-site variants.
-* **Sliding-Window Deletion Scanner:** Evaluates sliding deletions of 5, 10, 25, or 50 bp, fetching trailing adjacent genomic sequences to maintain fixed locus sequence sizes for perfect coordinate alignment.
+* **Sliding-Window Deletion Scanner:** Evaluates sliding deletions of 5, 10, 25, or 50 bp, performing in-place replacement padding with local downstream sequence to preserve input sequence size and genomic coordinate alignment for perfect model predictions.
+* **Evenly-Spaced Deletions:** If `max_candidates` is limited during deletion sweeps, places exactly $N$ deletions of fixed length (10bp) evenly spaced across the *full input locus* with length-preserving in-place padding.
 * **Motif-Aware Insertion / Ablation Solver:** Inserts consensus binding motifs (CTCF, SP1, AP-1, TATA, OCT4, NF-kB) systematically across design region spacing, or searches for and ablates existing motifs (with up to 2 mismatches) using scrambled substitution or deletion.
 
-Registered on the AlphaGenome microservice as `/optimize_edits` and exposed to the LangGraph agent as the `optimize_edits` tool.
+Registered on the AlphaGenome microservice as `/optimize_edits` (with real-time progress updates streamed via `/optimize_edits/stream` using multi-threaded SSE queues) and exposed to the LangGraph agent as the `optimize_edits` tool.
 
 #### 📐 Automatic Locus Dimension Alignment
 To satisfy Deep UNet convolutional downsampling layers and maximum input constraints:
@@ -81,8 +84,8 @@ To satisfy Deep UNet convolutional downsampling layers and maximum input constra
 
 ### 📊 Web UI Comparison & Alignment Portal
 The React web interface is enhanced with deep user feedback controls:
-1. **HTML5 Canvas Overlaid Comparison:** Renders reference (solid color) vs. edited state (bright coral dashed line) on the same plot for immediate, high-fidelity comparative profiles. Includes dual hover-tooltips.
-2. **Inline Feedback & Step Corrections:** Thumbs-up/down button logs preferences. Users can edit agent reasoning steps (thoughts) and tool call parameters directly inline before executing them to log golden-standard Supervised Fine-Tuning (SFT) training data.
+1. **Interactive Zoom Suite with HTML5 Canvas Overlaid Comparison:** Renders reference vs. edited state (bright coral dashed line) overlaid on the same plot. Fully supports multi-modal zooming (from 3 bins up to the full $N$ bins predicted) via click-and-drag subregion selections, symmetrical zoom in/out buttons, direct range input, or keyboard shortcuts (`Cmd/Ctrl` + `+`/`-`). Features local vertical autoscale, synchronized genomic coordinate ticks, and dual-percentage hovercards (zoomed offset vs. full global locus window).
+2. **Inline Feedback & Step Corrections:** Thumbs-up/down button logs preferences (capturing structured `chosen_tool_calls` and `rejected_tool_calls` payloads inside preference databases to enable multi-turn RL fine-tuning). Users can edit agent reasoning steps (thoughts) and tool call parameters directly inline before executing them to log golden-standard Supervised Fine-Tuning (SFT) training data.
 3. **Alternative A/B Regeneration:** Disliking a response allows A/B testing alternative reasoning paths via a dynamic history-popping endpoint (popping assistant/user turns).
 4. **Dedicated Alignment Dashboard:** A persistent sidebar tab visualizes logged data stats (DPO preference counts, SFT correction counts), displays split inspectors of logged trajectories, and provides instant dataset exports to JSONL.
 
