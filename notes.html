@@ -93,5 +93,15 @@
             <li>Automatically commits successful plans to <code>sft_corrections.jsonl</code> (Expert SFT) and unsuccessful plans to <code>dpo_preferences.jsonl</code> (DPO rejected) with empty/optimal chosen placeholders.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Fine-tuning & Local Ollama Deployment Scripts</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Created the full Hugging Face and TRL-based local model alignment training and deployment workflow:</p>
+        <ul>
+            <li>Wrote <code>scripts/train_sft.py</code> which uses PEFT/QLoRA in 4-bit and <code>SFTTrainer</code> to fine-tune <code>google/gemma-4-E4B-it</code> on logged expert corrections.</li>
+            <li>Wrote <code>scripts/train_dpo.py</code> which uses <code>DPOTrainer</code> to align the agent's preferences using direct preference optimization on pairwise preference logs.</li>
+            <li>Created <code>scripts/merge_and_deploy.sh</code> to automate merging LoRA adapters, generating a tailored Ollama Modelfile withctx parameters/system prompts, and registering/deploying the final model to local Ollama instances.</li>
+        </ul>
+    </div>
 </body>
 </html>
