@@ -94,6 +94,7 @@ def _predict(
     resolution: str,
     organism: str,
     session_context: Any = None,
+    use_cache: bool = True,
 ) -> dict[str, Any]:
     body = {
         "locus": locus,
@@ -106,7 +107,7 @@ def _predict(
     # paying for a second AlphaGenome forward pass when the args are identical.
     cache = None
     key = _cache_key(body)
-    if session_context is not None:
+    if use_cache and session_context is not None:
         cache = getattr(session_context, "predict_cache", None)
         if cache is None:
             cache = {}

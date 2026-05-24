@@ -248,9 +248,26 @@ class OptimizeEditsInput(BaseModel):
     objective_head: str = Field(description="Target AlphaGenome head, e.g. 'atac', 'cage', 'rna_seq', 'chip_tf'.")
     objective_track: int = Field(description="Track index within the head.")
     objective_mode: str = Field(description="Optimization goal: 'maximize' (increase signal), 'minimize' (silence/decrease), or 'target' (match a specific value).")
-    design_region: str | None = Field(None, description="Sub-region 'chrN:start-end' (≤100 bp recommended) to apply edits. Defaults to ±50 bp around the locus center.")
+    design_region: str | None = Field(
+        None,
+        description=(
+            "Sub-region 'chrN:start-end', or relative form like '10308258±100'. "
+            "Prefer design_region_half_bp for ±N bp around locus center."
+        ),
+    )
+    design_region_half_bp: int | None = Field(
+        None,
+        description="Half-width in bp for ±N window around locus center when design_region is omitted.",
+    )
     target_value: float | None = Field(None, description="Target numeric value for the signal (required when objective_mode is 'target').")
     max_edits: int = Field(1, description="Maximum number of simultaneous edits (e.g., up to 3 for SNVs). Default 1.")
+    max_candidates: int | None = Field(
+        None,
+        description=(
+            "Maximum number of edit candidates to evaluate. For deletions: N evenly-spaced 10bp "
+            "deletions across the full input locus. For other types: evenly subsample design_region."
+        ),
+    )
     organism: str = Field("human", description="'human' or 'mouse'. Default 'human'.")
     top_k: int = Field(5, description="Number of top candidates to return. Default 5.")
     motif_name: str | None = Field(None, description="Transcription factor motif name to insert or ablate (e.g. 'CTCF', 'SP1', 'AP-1', 'TATA', 'OCT4', 'NF-kB').")
