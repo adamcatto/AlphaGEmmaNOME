@@ -1,7 +1,7 @@
 [project]
 name = "omnigemmanome"
 version = "0.0.1"
-description = "Functional-genomics chat app: Gemma-2B (Ollama) + smolagents + alphagenome-pytorch"
+description = "Functional-genomics chat app: Gemma-4B (Ollama) + LangGraph + alphagenome-pytorch"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
