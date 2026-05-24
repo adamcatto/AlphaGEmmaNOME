@@ -52,5 +52,15 @@
             <li>Extended interactive tooltip hover behavior to dynamically display both <code>ref</code> and <code>edit</code> numerical values side-by-side.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Feedback Storage and Alignment Endpoints</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Created the local feedback-driven alignment databases and endpoints inside the agent backend:</p>
+        <ul>
+            <li>Implemented <code>services/agent_backend/feedback_store.py</code> with atomic thread-safe logging of pairwise choices (DPO) and step corrections (SFT) to high-throughput local JSONL formats in <code>services/agent_backend/data/</code>.</li>
+            <li>Created <code>PreferenceRequest</code> and <code>CorrectionRequest</code> Pydantic validation schemas.</li>
+            <li>Registered new backend REST endpoints (<code>POST /feedback/preference</code>, <code>POST /feedback/correction</code>, <code>GET /feedback/stats</code>, <code>GET /feedback/export</code>) in <code>services/agent_backend/app.py</code>.</li>
+        </ul>
+    </div>
 </body>
 </html>

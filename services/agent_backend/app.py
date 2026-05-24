@@ -65,6 +65,21 @@ class HealthResponse(BaseModel):
     alphagenome_reachable: bool
 
 
+class PreferenceRequest(BaseModel):
+    session_id: str
+    prompt: str
+    chosen: str
+    rejected: str
+
+
+class CorrectionRequest(BaseModel):
+    session_id: str
+    prompt: str
+    user_message: str
+    original: str
+    corrected: str
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -334,3 +349,34 @@ async def chat(req: ChatRequest):
                 yield _sse("final", {"session_id": session.id, "answer": ""})
 
     return EventSourceResponse(event_stream())
+
+
+# ---------------------------------------------------------------------------
+# Feedback & Alignment Endpoints
+# ---------------------------------------------------------------------------
+
+@app.post("/feedback/preference")
+def post_preference(req: PreferenceRequest):
+    from .feedback_store import log_preference
+    return log_preference(req.session_id, req.prompt, req.chosen, req.rejected)
+
+
+@app.post("/feedback/correction")
+def post_correction(req: CorrectionRequest):
+    from .feedback_store import log_correction
+    return log_correction(req.session_id, req.prompt, req.user_message, req.original, req.corrected)
+
+
+@app.get("/feedback/stats")
+def get_feedback_stats():
+    from .feedback_store import get_stats
+    return get_stats()
+
+
+@app.get("/feedback/export")
+def get_feedback_export(type: str = "dpo"):
+    from .feedback_store import export_dataset
+    if type not in ("dpo", "sft"):
+        raise HTTPException(400, "Invalid type. Must be 'dpo' or 'sft'.")
+    return export_dataset(type)
+
