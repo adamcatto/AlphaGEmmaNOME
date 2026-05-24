@@ -105,4 +105,46 @@ class OptimizeEdits(SessionAwareTool):
         if r.status_code != 200:
             return {"error": f"Genome edit optimization failed ({r.status_code}): {r.text[:300]}"}
 
-        return r.json()
+        res_json = r.json()
+        ref_seq = res_json.get("ref_seq")
+        edited_seq = res_json.get("edited_seq")
+
+        if self.session_context is not None and ref_seq and edited_seq:
+            from .macros import _predict, _store_prediction, _stash_viz
+
+            # Predict reference tracks
+            ref_pred = _predict(
+                locus=res_json["locus"],
+                sequence=None,
+                heads=[objective_head],
+                resolution="128bp",
+                organism=organism,
+                session_context=self.session_context,
+            )
+            # Predict edited tracks
+            edited_pred = _predict(
+                locus=None,
+                sequence=edited_seq,
+                heads=[objective_head],
+                resolution="128bp",
+                organism=organism,
+                session_context=self.session_context,
+            )
+
+            # Store predictions
+            _store_prediction(self.session_context, ref_pred, res_json["locus"], "128bp", organism)
+            _store_prediction(self.session_context, edited_pred, res_json["locus"], "128bp", organism)
+
+            # Build comparison viz spec
+            res_json["viz_spec"] = {
+                "type": "igv_tracks",
+                "prediction_id": ref_pred["prediction_id"],
+                "compare_prediction_id": edited_pred["prediction_id"],
+                "locus": res_json["locus"],
+                "head": objective_head,
+                "track_indices": [objective_track],
+            }
+
+            return _stash_viz(self.session_context, res_json)
+
+        return res_json

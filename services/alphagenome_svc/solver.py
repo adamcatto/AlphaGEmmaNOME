@@ -124,6 +124,7 @@ def solve_optimize_edits(
             "predicted_signal": round(signal, 6),
             "percent_change": round(pct, 2),
             "score": score,
+            "mut_seq": mut_seq,
         })
 
     # 2. RUN ALGORITHMS BASED ON EDIT TYPE
@@ -284,9 +285,14 @@ def solve_optimize_edits(
     candidates.sort(key=lambda c: -c["score"])
     top_candidates = candidates[:top_k]
 
-    # Clean up fields we don't serialize (like "score")
+    best = top_candidates[0] if top_candidates else None
+    ref_seq_out = ref_seq
+    edited_seq_out = best.get("mut_seq") if best else None
+
+    # Clean up fields we don't serialize (like "score" and "mut_seq")
     for c in top_candidates:
         c.pop("score", None)
+        c.pop("mut_seq", None)
 
     best = top_candidates[0] if top_candidates else None
     if best:
@@ -306,4 +312,6 @@ def solve_optimize_edits(
         "reference_signal": round(ref_signal, 6),
         "candidates": top_candidates,
         "summary": summary,
+        "ref_seq": ref_seq_out,
+        "edited_seq": edited_seq_out,
     }

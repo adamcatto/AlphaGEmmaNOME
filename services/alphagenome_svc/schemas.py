@@ -193,4 +193,6 @@ class OptimizeEditsResponse(BaseModel):
     reference_signal: float
     candidates: list[EditedCandidate]
     summary: str
+    ref_seq: str | None = None
+    edited_seq: str | None = None
 
