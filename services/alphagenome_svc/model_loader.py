@@ -281,7 +281,7 @@ class AlphaGenomePredictor:
         track_index: int,
         resolution: int,
     ) -> float:
-        """Return the mean signal for one track from a predict() result."""
+        """Return the mean signal of the 3 center bins for one track from a predict() result."""
         import torch
         import torch.nn.functional as F
 
@@ -298,7 +298,40 @@ class AlphaGenomePredictor:
             arr = arr[0]  # [L, L, T] for contact_maps
         if track_index >= arr.shape[-1]:
             raise IndexError(f"track_index {track_index} out of range for head {head!r} ({arr.shape[-1]} tracks).")
-        return float(arr[..., track_index].mean())
+
+        track_arr = arr[..., track_index]
+
+        # Slice the 3 center bins along spatial dimension(s)
+        if track_arr.ndim == 2:
+            # For 1D track: [batch, seq_len]
+            if arr.ndim == 3:
+                batch, seq_len = track_arr.shape
+                center = seq_len // 2
+                if seq_len >= 3:
+                    sub_arr = track_arr[:, center - 1 : center + 2]
+                else:
+                    sub_arr = track_arr
+                return float(sub_arr.mean())
+            else:
+                # For 2D contact map (after arr[0]): [L, L]
+                L = track_arr.shape[0]
+                center = L // 2
+                if L >= 3:
+                    sub_arr = track_arr[center - 1 : center + 2, center - 1 : center + 2]
+                else:
+                    sub_arr = track_arr
+                return float(sub_arr.mean())
+        elif track_arr.ndim == 1:
+            # Fallback if no batch dimension: [seq_len]
+            seq_len = track_arr.shape[0]
+            center = seq_len // 2
+            if seq_len >= 3:
+                sub_arr = track_arr[center - 1 : center + 2]
+            else:
+                sub_arr = track_arr
+            return float(sub_arr.mean())
+        else:
+            return float(track_arr.mean())
 
 
 def get_model():
@@ -338,6 +371,12 @@ def get_model():
 
         backbone = backbone.to(settings.alphagenome.device)
         backbone.eval()
+
+        # Fix upstream bug in alphagenome_pytorch's BatchRMSNorm where update_running_var
+        # is always evaluated as True even in eval mode because of an incorrect default() fallback.
+        for m in backbone.modules():
+            if m.__class__.__name__ == "BatchRMSNorm":
+                m.update_running_var = False
 
         predictor = AlphaGenomePredictor(backbone, raw_sd, settings.alphagenome.device)
         _model = predictor
