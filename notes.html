@@ -82,5 +82,16 @@
             <li>Registered a persistent <code>🛡️ Alignment Portal</code> tab button in <code>VizPane.tsx</code> to toggle between standard tracks visualization views and the dashboard.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Automated RL Trajectory Generator</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Created a closed-loop synthetic trajectory generator to autonomously generate and evaluate agent behaviors using AlphaGenome predictions as an Oracle:</p>
+        <ul>
+            <li>Wrote <code>scripts/auto_rl_generator.py</code> which defines complex genomic editing challenges (promoter silencers, accessibility enhancers, CTCF insulators, multi-site snvs).</li>
+            <li>Iteratively triggers the local agent's <code>/chat</code> endpoint via an HTTP client, parsing streaming thoughts, tool calls, and final answers from SSE channels.</li>
+            <li>Uses the final computed <code>percent_change</code> returned by the <code>optimize_edits</code> tool execution inside the simulated genomic track as the programmatic Oracle labeler.</li>
+            <li>Automatically commits successful plans to <code>sft_corrections.jsonl</code> (Expert SFT) and unsuccessful plans to <code>dpo_preferences.jsonl</code> (DPO rejected) with empty/optimal chosen placeholders.</li>
+        </ul>
+    </div>
 </body>
 </html>
