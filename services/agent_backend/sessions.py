@@ -17,6 +17,7 @@ class Session:
     history: list[dict[str, Any]] = field(default_factory=list)
     uploads: dict[str, dict[str, Any]] = field(default_factory=dict)
     last_prediction: dict[str, Any] | None = None
+    predictions: dict[str, dict[str, Any]] = field(default_factory=dict)
     pending_viz_spec: dict[str, Any] | None = None
     bus: Any = None  # EventBus for the active chat; set in /chat, cleared on exit.
 

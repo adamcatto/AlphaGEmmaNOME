@@ -140,7 +140,7 @@ def get_session_tracks(
     session = STORE.get(session_id)
     if session is None:
         raise HTTPException(404, "Unknown session.")
-    pred = session.last_prediction
+    pred = getattr(session, "predictions", {}).get(prediction_id) or session.last_prediction
     if pred is None or pred.get("prediction_id") != prediction_id:
         raise HTTPException(404, "Prediction not in session memory (may have been evicted).")
     arr = pred["arrays"].get(head)

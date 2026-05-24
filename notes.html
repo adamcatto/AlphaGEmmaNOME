@@ -40,5 +40,17 @@
             <li>Enabled the tool in <code>config/tools.yaml</code>, allowing the LangGraph agent to autonomously solve inverse genomic design requests.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Overlaid Track Comparison Visualization</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Enabled overlaid comparison of reference (original) and post-edit tracks directly on the <code>TrackViewer</code> HTML5 Canvas:</p>
+        <ul>
+            <li>Updated <code>Session</code> class in <code>services/agent_backend/sessions.py</code> and predictions recording in <code>macros.py</code> / <code>alphagenome.py</code> to cache all generated predictions under a <code>predictions</code> dictionary indexed by <code>prediction_id</code>.</li>
+            <li>Updated <code>get_session_tracks</code> endpoint in <code>services/agent_backend/app.py</code> to retrieve any prediction from the session's <code>predictions</code> dictionary.</li>
+            <li>Modified <code>TrackViewer.tsx</code> in the frontend to support an optional <code>compare_prediction_id</code> property on <code>VizSpec</code>.</li>
+            <li>Implemented custom Canvas overlay rendering inside <code>TrackRowView</code>: reference state is drawn as standard filled area, while the edited state is drawn as an overlaid, bright coral, dashed curve with synchronized relative scaling.</li>
+            <li>Extended interactive tooltip hover behavior to dynamically display both <code>ref</code> and <code>edit</code> numerical values side-by-side.</li>
+        </ul>
+    </div>
 </body>
 </html>

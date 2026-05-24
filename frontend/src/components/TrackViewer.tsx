@@ -49,20 +49,31 @@ function fmtBp(bp: number): string {
 export default function TrackViewer({ spec }: Props) {
   const sessionId = useStore((s) => s.sessionId);
   const [data, setData] = useState<TracksResponse | null>(null);
+  const [compareData, setCompareData] = useState<TracksResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sessionId || !spec.head) {
       setData(null);
+      setCompareData(null);
       return;
     }
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchTracks(sessionId, spec.prediction_id, spec.head, spec.track_indices)
-      .then((r) => {
-        if (!cancelled) setData(r);
+
+    const primaryP = fetchTracks(sessionId, spec.prediction_id, spec.head, spec.track_indices);
+    const compareP = spec.compare_prediction_id
+      ? fetchTracks(sessionId, spec.compare_prediction_id, spec.head, spec.track_indices)
+      : Promise.resolve(null);
+
+    Promise.all([primaryP, compareP])
+      .then(([r, rc]) => {
+        if (!cancelled) {
+          setData(r);
+          setCompareData(rc);
+        }
       })
       .catch((e) => {
         if (!cancelled) setError(String(e));
@@ -70,10 +81,11 @@ export default function TrackViewer({ spec }: Props) {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
-  }, [sessionId, spec.prediction_id, spec.head, spec.track_indices]);
+  }, [sessionId, spec.prediction_id, spec.compare_prediction_id, spec.head, spec.track_indices]);
 
   const locus = useMemo(() => parseLocus(data?.locus ?? spec.locus ?? null), [data?.locus, spec.locus]);
   const width = 860;
@@ -106,17 +118,21 @@ export default function TrackViewer({ spec }: Props) {
         )}
         {!error &&
           data &&
-          data.tracks.map((row, i) => (
-            <TrackRowView
-              key={row.track_index}
-              row={row}
-              head={spec.head ?? ""}
-              width={width}
-              height={rowHeight}
-              sidePad={sidePad}
-              isLast={i === data.tracks.length - 1}
-            />
-          ))}
+          data.tracks.map((row, i) => {
+            const compRow = compareData?.tracks.find((r) => r.track_index === row.track_index);
+            return (
+              <TrackRowView
+                key={row.track_index}
+                row={row}
+                compareRow={compRow}
+                head={spec.head ?? ""}
+                width={width}
+                height={rowHeight}
+                sidePad={sidePad}
+                isLast={i === data.tracks.length - 1}
+              />
+            );
+          })}
         {data && locus && (
           <AxisRow
             width={width}
@@ -132,6 +148,7 @@ export default function TrackViewer({ spec }: Props) {
 
 interface RowProps {
   row: TrackRow;
+  compareRow?: TrackRow;
   head: string;
   width: number;
   height: number;
@@ -139,9 +156,9 @@ interface RowProps {
   isLast: boolean;
 }
 
-function TrackRowView({ row, head, width, height, sidePad, isLast }: RowProps) {
+function TrackRowView({ row, compareRow, head, width, height, sidePad, isLast }: RowProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [hover, setHover] = useState<{ x: number; v: number; frac: number } | null>(null);
+  const [hover, setHover] = useState<{ x: number; v: number; cv?: number; frac: number } | null>(null);
 
   const [stroke, fill] = colorFor(head);
 
@@ -161,7 +178,7 @@ function TrackRowView({ row, head, width, height, sidePad, isLast }: RowProps) {
 
     const values = row.values;
     if (values.length === 0) return;
-    const maxV = Math.max(row.max, 1e-9);
+    const maxV = Math.max(row.max, compareRow ? compareRow.max : 0, 1e-9);
 
     const n = values.length;
     const padTop = 4;
@@ -192,6 +209,24 @@ function TrackRowView({ row, head, width, height, sidePad, isLast }: RowProps) {
     }
     ctx.stroke();
 
+    // Draw compareRow if present (as a dashed bright red line)
+    if (compareRow && compareRow.values && compareRow.values.length > 0) {
+      const cValues = compareRow.values;
+      const cN = cValues.length;
+      ctx.strokeStyle = "#ff3b30";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      for (let i = 0; i < cN; i++) {
+        const x = (i / (cN - 1)) * plotW;
+        const y = baselineY - (cValues[i] / maxV) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset
+    }
+
     // Subtle baseline.
     ctx.strokeStyle = "rgba(0,0,0,0.08)";
     ctx.lineWidth = 1;
@@ -199,7 +234,7 @@ function TrackRowView({ row, head, width, height, sidePad, isLast }: RowProps) {
     ctx.moveTo(0, baselineY + 0.5);
     ctx.lineTo(plotW, baselineY + 0.5);
     ctx.stroke();
-  }, [row.values, row.max, stroke, fill, width, height, sidePad]);
+  }, [row.values, row.max, compareRow, stroke, fill, width, height, sidePad]);
 
   const plotW = width - sidePad - 16;
 
@@ -212,7 +247,13 @@ function TrackRowView({ row, head, width, height, sidePad, isLast }: RowProps) {
     }
     const frac = Math.max(0, Math.min(1, x / plotW));
     const idx = Math.round(frac * (row.values.length - 1));
-    setHover({ x, v: row.values[idx], frac });
+    const cIdx = compareRow && compareRow.values ? Math.round(frac * (compareRow.values.length - 1)) : -1;
+    setHover({
+      x,
+      v: row.values[idx],
+      cv: compareRow && compareRow.values && cIdx >= 0 ? compareRow.values[cIdx] : undefined,
+      frac,
+    });
   };
 
   return (
@@ -241,7 +282,8 @@ function TrackRowView({ row, head, width, height, sidePad, isLast }: RowProps) {
                 left: Math.min(hover.x + 8, plotW - 140),
               }}
             >
-              <div>value {hover.v.toFixed(3)}</div>
+              <div>ref: {hover.v.toFixed(3)}</div>
+              {hover.cv !== undefined && <div style={{ color: "#ff8b80" }}>edit: {hover.cv.toFixed(3)}</div>}
               <div style={styles.hoverFrac}>{(hover.frac * 100).toFixed(1)}% of window</div>
             </div>
           </>

@@ -326,13 +326,15 @@ def _store_prediction(
     for arr_obj in pred["arrays"]:
         decoded[arr_obj["head"]] = _decode(arr_obj)
     if session_context is not None:
-        session_context.last_prediction = {
+        p_data = {
             "prediction_id": pred["prediction_id"],
             "locus": locus,
             "arrays": decoded,
             "resolution": resolution,
             "organism": organism,
         }
+        session_context.last_prediction = p_data
+        session_context.predictions[pred["prediction_id"]] = p_data
     return decoded
 
 

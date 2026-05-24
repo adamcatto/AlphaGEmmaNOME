@@ -91,13 +91,15 @@ class PredictTracks(SessionAwareTool):
             )
 
         if self.session_context is not None:
-            self.session_context.last_prediction = {
+            p_data = {
                 "prediction_id": data["prediction_id"],
                 "locus": locus,
                 "arrays": decoded,
                 "resolution": resolution,
                 "organism": organism,
             }
+            self.session_context.last_prediction = p_data
+            self.session_context.predictions[data["prediction_id"]] = p_data
 
         return {
             "prediction_id": data["prediction_id"],
