@@ -316,10 +316,11 @@ def _parse_locus_coords(locus: str) -> tuple[str, int, int]:
 
 def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
     """Symmetrically expand a locus to be a multiple of `multiple` (e.g. 2048 bp)
-    and at least 16,384 base-pairs (2**14).
+    and at least 16,384 base-pairs (2**14). Symmetrically crops if it exceeds
+    the configured max sequence length.
     
     This ensures compatibility with deep UNet convolutional downsampling in the model,
-    while satisfying the minimum sequence input length requirement.
+    while satisfying the minimum and maximum sequence input length requirements.
     """
     try:
         chrom, start, end = _parse_locus_coords(locus)
@@ -328,6 +329,16 @@ def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
     length = end - start
     if length <= 0:
         return locus
+
+    # Symmetrically contract if it exceeds maximum sequence length
+    max_len = 131072
+    if length > max_len:
+        needed = length - max_len
+        left_cut = needed // 2
+        right_cut = needed - left_cut
+        start = start + left_cut
+        end = end - right_cut
+        length = end - start
 
     # Ensure length is at least 16,384 bp (2**14)
     min_len = 16384

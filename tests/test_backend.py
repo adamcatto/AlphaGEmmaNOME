@@ -177,3 +177,29 @@ def test_optimize_edits_tool_declaration():
     assert tool.name == "optimize_edits"
     assert "objective_mode" in tool.inputs
     assert "edit_type" in tool.inputs
+
+
+# ---------------------------------------------------------------------------
+# Part 4: Test Locus adjustment (symmetrical contraction & expansion)
+# ---------------------------------------------------------------------------
+
+def test_adjust_locus_to_multiple():
+    from services.alphagenome_svc.app import _adjust_locus_to_multiple, _parse_locus_coords
+
+    # Test symmetrical expansion when too small
+    small_locus = "chr19:44905791-44905891"  # 100 bp
+    adjusted_small = _adjust_locus_to_multiple(small_locus)
+    chrom, start, end = _parse_locus_coords(adjusted_small)
+    length = end - start
+    assert length >= 16384
+    assert length % 2048 == 0
+
+    # Test symmetrical contraction when too large
+    # SNAP25 is ~135kb: chr20:10172395-10308258
+    large_locus = "chr20:10172395-10308258"
+    adjusted_large = _adjust_locus_to_multiple(large_locus)
+    chrom_l, start_l, end_l = _parse_locus_coords(adjusted_large)
+    length_l = end_l - start_l
+    assert length_l == 131072  # EXACT max sequence length
+    assert length_l % 2048 == 0
+

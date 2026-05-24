@@ -74,6 +74,11 @@ An advanced unified solver supports multiple edit styles to achieve target funct
 
 Registered on the AlphaGenome microservice as `/optimize_edits` and exposed to the LangGraph agent as the `optimize_edits` tool.
 
+#### 📐 Automatic Locus Dimension Alignment
+To satisfy Deep UNet convolutional downsampling layers and maximum input constraints:
+* **Symmetrical Padding:** Loci shorter than 16,384 bp are automatically padded symmetrically to at least 16,384 bp and expanded to the nearest multiple of 2048 bp, eliminating shape mismatch errors (e.g., `EinopsError`).
+* **Symmetrical Clipping:** Loci longer than 131,072 bp (such as SNAP25 at ~135kb) are automatically and symmetrically clipped/contracted to exactly 131,072 bp centered on the original region, satisfying the maximum supported sequence length of the underlying predictor model.
+
 ### 📊 Web UI Comparison & Alignment Portal
 The React web interface is enhanced with deep user feedback controls:
 1. **HTML5 Canvas Overlaid Comparison:** Renders reference (solid color) vs. edited state (bright coral dashed line) on the same plot for immediate, high-fidelity comparative profiles. Includes dual hover-tooltips.

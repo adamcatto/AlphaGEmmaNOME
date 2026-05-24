@@ -134,5 +134,16 @@
             <li>Constructed and stashed a comparative <code>viz_spec</code> pointing the reference <code>prediction_id</code> and edited <code>compare_prediction_id</code> to automatically render in the frontend, enabling the user to immediately compare the functional track profiles side-by-side with overlaid dashed coral curves.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Robust Large-Locus Clipping and Tool Exception Safeguards</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Identified and resolved a critical bug where requesting edits for large genes (such as <code>SNAP25</code> with a locus span of ~135kb) caused the agent to produce absolutely empty responses:</p>
+        <ul>
+            <li><strong>Root Cause Analysis:</strong> Found that Ensembl lookups for large genes exceed AlphaGenome's maximum supported sequence length (<code>131,072 bp</code>). Passing this locus directly to the microservice raised a 400 Bad Request. When the agent backend's comparative visualization step ran <code>_predict</code> on this locus, it propagated an unhandled exception, causing the Server-Sent Events (SSE) chat stream to crash silently and return a completely empty response.</li>
+            <li><strong>Symmetrical Large-Locus Clipping:</strong> Updated <code>_adjust_locus_to_multiple</code> in <code>services/alphagenome_svc/app.py</code> to detect if an input locus exceeds <code>131,072 bp</code>. If so, it symmetrically clips/contracts the coordinate boundaries to exactly 131,072 bp centered on the original locus. Because 131,072 is perfectly divisible by 2048 (the deep UNet block size), this satisfies both maximum length boundaries and network downsampling requirements automatically.</li>
+            <li><strong>Tool Execution Exception Safeguards:</strong> Wrapped the dual-prediction block inside <code>OptimizeEdits.forward()</code> (in <code>services/agent_backend/tools/genome_edits.py</code>) within a try-except block. If a prediction or comparative visualization fails for any unexpected reason, the tool logs the warning and gracefully falls back to returning the text/JSON candidates rather than crashing the active SSE stream.</li>
+            <li><strong>Unit Testing Verification:</strong> Added a comprehensive regression test <code>test_adjust_locus_to_multiple</code> in <code>tests/test_backend.py</code> to verify that both small expansion (under 16,384 bp) and large contraction (clipping Snap25 from 135kb down to 131,072 bp) function correctly and are perfectly aligned to 2048 bp boundaries. All tests passed.</li>
+        </ul>
+    </div>
 </body>
 </html>
