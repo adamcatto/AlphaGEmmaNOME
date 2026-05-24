@@ -1,6 +1,6 @@
 # OmniGemmaNome
 
-Interactive functional-genomics exploration via chat. A Gemma-2B-IT agent (served by Ollama, driven by [smolagents](https://github.com/huggingface/smolagents)) orchestrates calls to an [alphagenome-pytorch](https://huggingface.co/gtca/alphagenome_pytorch) predictor and renders the results in an IGV.js-based web UI.
+Interactive functional-genomics exploration via chat. A Gemma-based agent (served by Ollama, structured using a [LangGraph](https://github.com/langchain-ai/langgraph) conditional state graph) orchestrates calls to an [alphagenome-pytorch](https://huggingface.co/gtca/alphagenome_pytorch) predictor and renders the results in a custom interactive track viewer.
 
 ## Layout
 
@@ -8,7 +8,7 @@ Interactive functional-genomics exploration via chat. A Gemma-2B-IT agent (serve
 config/              YAML configuration, loaded via pydantic-settings
 services/
   alphagenome_svc/   FastAPI microservice wrapping the 450M-param AlphaGenome model
-  agent_backend/     FastAPI + smolagents agent, exposes SSE chat endpoint
+  agent_backend/     FastAPI + LangGraph agent (adapting legacy smolagents tools), exposes SSE chat endpoint
 frontend/            Vite + React + TS, 1/3 chat left · 2/3 visualization right
 scripts/             One-time setup: download genome, model weights, pull ollama model
 docs/                Agent-facing tool reference
