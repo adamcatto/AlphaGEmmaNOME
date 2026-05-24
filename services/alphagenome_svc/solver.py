@@ -81,6 +81,7 @@ def solve_optimize_edits(
     motif_name: str | None = None,
 ) -> dict[str, Any]:
     """Find the best genome edits using AlphaGenome predictions and state-space exploration."""
+    import time
     settings = load_settings()
     model = get_model()
     if model is None:
@@ -108,8 +109,10 @@ def solve_optimize_edits(
         m_type: str,
         pos: int,
         length: int,
-        seq_change: str
-    ):
+        seq_change: str,
+        current_idx: int | None = None,
+        total_count: int | None = None,
+    ) -> float:
         preds = model.predict_sequence(mut_seq, organism_idx, (objective_head,), (res_int,))
         signal = model.extract_track_signal(preds, objective_head, objective_track, res_int)
         delta = signal - ref_signal
@@ -127,11 +130,31 @@ def solve_optimize_edits(
             "mut_seq": mut_seq,
         })
 
+        if current_idx is not None and total_count is not None:
+            percent = int((current_idx / total_count) * 100)
+            bar_len = 25
+            filled = int(bar_len * current_idx // total_count)
+            bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
+            if current_idx == total_count:
+                bar = "=" * bar_len
+
+            elapsed = time.time() - t_start
+            avg_time = elapsed / current_idx if current_idx > 0 else 0.0
+            eta = avg_time * (total_count - current_idx)
+            eta_str = f"{int(eta)}s" if current_idx > 0 else "--s"
+
+            logger.info(
+                f"[{bar}] {percent}% ({current_idx}/{total_count}) | "
+                f"Evaluating: {seq_change} at pos {pos} | "
+                f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+            )
+        return score
+
     # 2. RUN ALGORITHMS BASED ON EDIT TYPE
     if edit_type == "snv":
         # Multi-site Beam Search / Single substitution scan
         # First, find single substitutions
-        single_muts: list[dict[str, Any]] = []
+        single_mut_specs = []
         for genomic_pos in range(des_start, des_end):
             seq_offset = genomic_pos - locus_start
             if seq_offset < 0 or seq_offset >= len(ref_seq):
@@ -140,20 +163,47 @@ def solve_optimize_edits(
             for alt in "ACGT":
                 if alt == ref_base:
                     continue
-                mut_seq = apply_edit(
-                    ref_seq, chrom, locus_start, locus_end, "snv",
-                    genomic_pos, 1, alt, settings.paths.genome_fasta
-                )
-                preds = model.predict_sequence(mut_seq, organism_idx, (objective_head,), (res_int,))
-                signal = model.extract_track_signal(preds, objective_head, objective_track, res_int)
-                score = score_candidate(signal, objective_mode, target_value, ref_signal)
-                single_muts.append({
-                    "pos": genomic_pos,
-                    "ref": ref_base,
-                    "alt": alt,
-                    "score": score,
-                    "seq": mut_seq
-                })
+                single_mut_specs.append((genomic_pos, ref_base, alt))
+
+        total_single = len(single_mut_specs)
+        logger.info(f"Starting single substitution SNV scan: {total_single} candidates to evaluate.")
+
+        single_muts: list[dict[str, Any]] = []
+        t_start = time.time()
+        for i, (genomic_pos, ref_base, alt) in enumerate(single_mut_specs, 1):
+            mut_seq = apply_edit(
+                ref_seq, chrom, locus_start, locus_end, "snv",
+                genomic_pos, 1, alt, settings.paths.genome_fasta
+            )
+            preds = model.predict_sequence(mut_seq, organism_idx, (objective_head,), (res_int,))
+            signal = model.extract_track_signal(preds, objective_head, objective_track, res_int)
+            score = score_candidate(signal, objective_mode, target_value, ref_signal)
+            single_muts.append({
+                "pos": genomic_pos,
+                "ref": ref_base,
+                "alt": alt,
+                "score": score,
+                "seq": mut_seq
+            })
+
+            # Print single scan progress
+            percent = int((i / total_single) * 100)
+            bar_len = 25
+            filled = int(bar_len * i // total_single)
+            bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
+            if i == total_single:
+                bar = "=" * bar_len
+
+            elapsed = time.time() - t_start
+            avg_time = elapsed / i if i > 0 else 0.0
+            eta = avg_time * (total_single - i)
+            eta_str = f"{int(eta)}s" if i > 0 else "--s"
+
+            logger.info(
+                f"[{bar}] {percent}% ({i}/{total_single}) | "
+                f"Scanning base: {ref_base}>{alt} at pos {genomic_pos} | "
+                f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+            )
 
         # Sort single mutations by objective score descending
         single_muts.sort(key=lambda m: -m["score"])
@@ -164,17 +214,22 @@ def solve_optimize_edits(
                 evaluate_sequence(m["seq"], "snv", m["pos"], 1, f"{m['ref']}>{m['alt']}")
         else:
             # Beam search on top single mutations to find combinations
-            # Top N mutations to combine
-            pool = single_muts[:10]  # combine from the top 10 single mutations to be extremely fast and effective
+            pool = single_muts[:10]  # combine from the top 10 single mutations
             beam = [([m], m["score"], m["seq"]) for m in pool]
 
             for step in range(2, max_edits + 1):
                 next_beam = []
+                total_beam_evals = len(beam) * len(pool)
+                logger.info(f"Beam search step {step}/{max_edits}: evaluating up to {total_beam_evals} combinations.")
+                t_beam_start = time.time()
+                beam_idx = 0
+
                 for active_muts, prev_score, active_seq in beam:
                     last_pos = active_muts[-1]["pos"]
                     for m in pool:
+                        beam_idx += 1
                         if m["pos"] <= last_pos:
-                            continue  # avoid duplicate combinations and same positions
+                            continue
                         # apply mutation to active_seq
                         new_seq = apply_edit(
                             active_seq, chrom, locus_start, locus_end, "snv",
@@ -186,10 +241,29 @@ def solve_optimize_edits(
 
                         next_beam.append((active_muts + [m], score, new_seq))
 
+                        # Log progress for active beam evaluations
+                        percent = int((beam_idx / total_beam_evals) * 100)
+                        bar_len = 25
+                        filled = int(bar_len * beam_idx // total_beam_evals)
+                        bar = "=" * filled + ">" + " " * (bar_len - filled - 1)
+                        if beam_idx == total_beam_evals:
+                            bar = "=" * bar_len
+
+                        elapsed = time.time() - t_beam_start
+                        avg_time = elapsed / beam_idx if beam_idx > 0 else 0.0
+                        eta = avg_time * (total_beam_evals - beam_idx)
+                        eta_str = f"{int(eta)}s" if beam_idx > 0 else "--s"
+
+                        logger.info(
+                            f"[{bar}] {percent}% ({beam_idx}/{total_beam_evals}) | "
+                            f"Beam step {step} | combo pos {m['pos']} | "
+                            f"Elapsed: {elapsed:.1f}s | ETA: {eta_str}"
+                        )
+
                 if not next_beam:
                     break
                 next_beam.sort(key=lambda b: -b[1])
-                beam = next_beam[:3]  # keep beam width of 3 for fast runtimes
+                beam = next_beam[:3]  # keep beam width of 3
 
             # Evaluate top beam candidates
             all_combos = []
@@ -211,6 +285,7 @@ def solve_optimize_edits(
     elif edit_type == "deletion":
         # Sliding-Window Deletion Scanner
         deletion_sizes = [5, 10, 25, 50]
+        specs = []
         for L in deletion_sizes:
             if L > (des_end - des_start):
                 continue
@@ -220,7 +295,13 @@ def solve_optimize_edits(
                     ref_seq, chrom, locus_start, locus_end, "deletion",
                     p, L, "", settings.paths.genome_fasta
                 )
-                evaluate_sequence(mut_seq, "deletion", p, L, f"del {L}bp")
+                specs.append((mut_seq, "deletion", p, L, f"del {L}bp"))
+
+        total = len(specs)
+        logger.info(f"Starting sliding-window deletion scan: {total} candidates to evaluate.")
+        t_start = time.time()
+        for i, (m_seq, m_type, p, L, desc) in enumerate(specs, 1):
+            evaluate_sequence(m_seq, m_type, p, L, desc, i, total)
 
     elif edit_type == "insertion" or edit_type == "motif":
         # Determine motif or sequence to insert
@@ -240,20 +321,17 @@ def solve_optimize_edits(
         motif_len = len(motif_seq)
 
         # Decide whether to do Ablation or Insertion
-        # If edit_type is "motif" and the motif already exists in the design region, ablate it.
-        # Otherwise, perform insertion at different spacings.
         ablate_candidates: list[tuple[int, int]] = []
         des_seq = ref_seq[des_start - locus_start : des_end - locus_start].upper()
 
         # Find exact matches or single-mismatch matches of motif_seq in design region
-        # Let's search for exact consensus matching
         for i in range(len(des_seq) - motif_len + 1):
             sub = des_seq[i : i + motif_len]
-            # calculate mismatches
             mismatches = sum(1 for c1, c2 in zip(sub, motif_seq) if c1 != c2 and c2 != "N")
             if mismatches <= 2:  # allow up to 2 mismatches to find motifs
                 ablate_candidates.append((des_start + i, motif_len))
 
+        specs = []
         if edit_type == "motif" and ablate_candidates:
             # ABLATION MODE: systemically mutate or delete existing motif sites
             for p, L in ablate_candidates:
@@ -263,14 +341,14 @@ def solve_optimize_edits(
                     ref_seq, chrom, locus_start, locus_end, "snv",
                     p, L, scrambled, settings.paths.genome_fasta
                 )
-                evaluate_sequence(mut_seq, "motif", p, L, f"ablate motif {motif_name} ({ref_seq[p-locus_start:p-locus_start+L]}>{scrambled})")
-                
+                specs.append((mut_seq, "motif", p, L, f"ablate motif {motif_name} ({ref_seq[p-locus_start:p-locus_start+L]}>{scrambled})"))
+
                 # 2. Deletion option: delete it
                 del_seq = apply_edit(
                     ref_seq, chrom, locus_start, locus_end, "deletion",
                     p, L, "", settings.paths.genome_fasta
                 )
-                evaluate_sequence(del_seq, "motif", p, L, f"delete motif {motif_name} ({L}bp)")
+                specs.append((del_seq, "motif", p, L, f"delete motif {motif_name} ({L}bp)"))
         else:
             # INSERTION MODE: systematically insert at various spacings/positions across design region
             stride = max(1, (des_end - des_start) // 10)  # up to 10 insertion positions
@@ -279,7 +357,13 @@ def solve_optimize_edits(
                     ref_seq, chrom, locus_start, locus_end, "insertion",
                     p, motif_len, motif_seq, settings.paths.genome_fasta
                 )
-                evaluate_sequence(mut_seq, "insertion", p, motif_len, f"insert motif {motif_name} ({motif_seq})")
+                specs.append((mut_seq, "insertion", p, motif_len, f"insert motif {motif_name} ({motif_seq})"))
+
+        total = len(specs)
+        logger.info(f"Starting motif/insertion scan: {total} candidates to evaluate.")
+        t_start = time.time()
+        for i, (m_seq, m_type, p, L, desc) in enumerate(specs, 1):
+            evaluate_sequence(m_seq, m_type, p, L, desc, i, total)
 
     # 3. Sort candidates by objective score descending
     candidates.sort(key=lambda c: -c["score"])
