@@ -331,7 +331,7 @@ def _adjust_locus_to_multiple(locus: str, multiple: int = 2048) -> str:
         return locus
 
     # Symmetrically contract if it exceeds maximum sequence length
-    max_len = 131072
+    max_len = settings.limits.max_sequence_length
     if length > max_len:
         needed = length - max_len
         left_cut = needed // 2

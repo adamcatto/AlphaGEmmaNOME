@@ -200,7 +200,7 @@ def test_adjust_locus_to_multiple():
     adjusted_large = _adjust_locus_to_multiple(large_locus)
     chrom_l, start_l, end_l = _parse_locus_coords(adjusted_large)
     length_l = end_l - start_l
-    assert length_l == 131072  # EXACT max sequence length
+    assert length_l == 32768  # EXACT max sequence length
     assert length_l % 2048 == 0
 
 

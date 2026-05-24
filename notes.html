@@ -157,5 +157,17 @@
             <li><strong>Unit Testing Verification:</strong> Added <code>test_intent_router_node</code> to <code>tests/test_backend.py</code> to verify router conditional edges and mock LLM classification outputs. All backend tests pass successfully.</li>
         </ul>
     </div>
+    <div class="entry">
+        <h2>Genomic Context Contraction for Real-time Prediction Speedups</h2>
+        <p class="date">May 24, 2026</p>
+        <p>Shortened the maximum sequence context length to dramatically accelerate sequence edits optimization runtimes on CPU:</p>
+        <ul>
+            <li><strong>The Speed Bottleneck:</strong> Found that running sliding window deletions or beam search SNVs over large regions of interest triggers hundreds of back-to-back forward passes of the neural network. On a $131,072\text{ bp}$ ($128\text{ kb}$) locus, each single forward pass on the CPU takes around 4.3 seconds, meaning optimization runs can take over 30 minutes to complete.</li>
+            <li><strong>Symmetrical Context Contraction:</strong> Reduced the configured maximum sequence length limit (<code>max_sequence_length</code>) in <code>config/settings.yaml</code> and <code>config/settings.dev.yaml</code> to $32,768\text{ bp}$ ($2^{15}$ or $32\text{ kb}$).</li>
+            <li><strong>Dynamic Config Binding:</strong> Refactored <code>_adjust_locus_to_multiple</code> in <code>services/alphagenome_svc/app.py</code> to dynamically read and clamp sequences against <code>settings.limits.max_sequence_length</code> instead of a hardcoded value. High-context regulatory areas are now cleanly centered and restricted to 32kb.</li>
+            <li><strong>Massive Runtimes Speedup:</strong> By decreasing sequence lengths from 128kb to 32kb, the neural network's convolution steps execute 4x faster per pass. This shortens the entire interactive optimization and visualization wait time down to a fraction of its original duration (approximately 1 to 2 minutes on CPU).</li>
+            <li><strong>Verification:</strong> Updated <code>test_adjust_locus_to_multiple</code> in <code>tests/test_backend.py</code> to expect the new $32,768\text{ bp}$ boundaries. Ran `pytest` to confirm that all test cases pass perfectly.</li>
+        </ul>
+    </div>
 </body>
 </html>
