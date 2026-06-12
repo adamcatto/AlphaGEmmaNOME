@@ -1,4 +1,4 @@
-# OmniGemmaNome Documentation
+# AlphaGEmmaNOME Documentation
 
 Interactive functional-genomics exploration via chat. A small local LLM (Qwen 3 through Ollama) drives a [smolagents](https://github.com/huggingface/smolagents) loop whose primary tool is an [alphagenome-pytorch](https://huggingface.co/gtca/alphagenome_pytorch) predictor. Results render in a custom React + canvas track viewer on the right half of the screen.
 

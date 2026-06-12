@@ -17,8 +17,8 @@ from transformers import (
 from trl import DPOTrainer
 
 MODEL_ID = "google/gemma-4-E4B-it"
-DATA_PATH = Path("/opt/software/OmniGemmaNome/services/agent_backend/data/dpo_preferences.jsonl")
-OUTPUT_DIR = "/opt/software/OmniGemmaNome/services/agent_backend/data/dpo_adapters"
+DATA_PATH = Path("/opt/software/AlphaGEmmaNOME/services/agent_backend/data/dpo_preferences.jsonl")
+OUTPUT_DIR = "/opt/software/AlphaGEmmaNOME/services/agent_backend/data/dpo_adapters"
 
 
 def load_dpo_dataset() -> Dataset:

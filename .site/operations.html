@@ -25,7 +25,7 @@
     
     
       
-        <title>Operations - OmniGemmaNome</title>
+        <title>Operations - AlphaGEmmaNOME</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="index.html" title="OmniGemmaNome" class="md-header__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+    <a href="index.html" title="AlphaGEmmaNOME" class="md-header__button md-logo" aria-label="AlphaGEmmaNOME" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            OmniGemmaNome
+            AlphaGEmmaNOME
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -310,13 +310,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="index.html" title="OmniGemmaNome" class="md-nav__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+    <a href="index.html" title="AlphaGEmmaNOME" class="md-nav__button md-logo" aria-label="AlphaGEmmaNOME" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    OmniGemmaNome
+    AlphaGEmmaNOME
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -1374,7 +1374,7 @@
 </span></code></pre></div>
 <p>Service wiring:</p>
 <ul>
-<li><code>agent-backend</code> gets <code>OMNIGEMMA_OLLAMA__BASE_URL=http://ollama:11434</code> and <code>OMNIGEMMA_ALPHAGENOME__SERVICE_URL=http://alphagenome-svc:8001</code> so it talks to the sibling containers by name.</li>
+<li><code>agent-backend</code> gets <code>ALPHAGEMMA_OLLAMA__BASE_URL=http://ollama:11434</code> and <code>ALPHAGEMMA_ALPHAGENOME__SERVICE_URL=http://alphagenome-svc:8001</code> so it talks to the sibling containers by name.</li>
 <li><code>frontend</code> is built as its own image; the browser still talks to <code>localhost:8000</code>, so <code>VITE_AGENT_BACKEND_URL</code> is set accordingly.</li>
 <li><code>ollama_data</code> volume persists pulled models between restarts.</li>
 <li><code>config/</code> is mounted read-only into both Python services; <code>services/alphagenome_svc/data/</code> is mounted read-write into the alphagenome-svc container (the model and genome live here).</li>
@@ -1429,8 +1429,8 @@
 <h2 id="gpu-deployment">GPU deployment<a class="headerlink" href="#gpu-deployment" title="Permanent link">&para;</a></h2>
 <p>The AlphaGenome forward pass is 10–30× faster on GPU. Two moves:</p>
 <ol>
-<li>Host alphagenome-svc on a machine with a CUDA-capable GPU and set <code>OMNIGEMMA_ALPHAGENOME__DEVICE=cuda</code>.</li>
-<li>Point the agent-backend at it via <code>OMNIGEMMA_ALPHAGENOME__SERVICE_URL=http://&lt;gpu-host&gt;:8001</code>.</li>
+<li>Host alphagenome-svc on a machine with a CUDA-capable GPU and set <code>ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda</code>.</li>
+<li>Point the agent-backend at it via <code>ALPHAGEMMA_ALPHAGENOME__SERVICE_URL=http://&lt;gpu-host&gt;:8001</code>.</li>
 </ol>
 <p>Weight-loading honors whatever torch sees; ensure the container has <code>nvidia-container-toolkit</code> and <code>--gpus all</code> (or a PyTorch CUDA base image).</p>
 <p>A <code>cuda</code> dtype tweak is declared in config but NOT currently threaded through to <code>from_pretrained</code> — it runs at the checkpoint's native dtype (float32). For a quick win on a memory-constrained GPU, add <code>.half()</code> in <a href="../services/alphagenome_svc/model_loader.py">model_loader.py</a> after <code>.to(device)</code> and cast inputs likewise.</p>
@@ -1468,7 +1468,7 @@
 <ul>
 <li>Reduce <code>heads</code> at the call site.</li>
 <li>Use <code>resolution: "128bp"</code> (default) rather than <code>"1bp"</code> (saves ~128× on 1D heads).</li>
-<li>Switch to GPU via <code>OMNIGEMMA_ALPHAGENOME__DEVICE=cuda</code>.</li>
+<li>Switch to GPU via <code>ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda</code>.</li>
 </ul>
 <h3 id="weights-not-loading">Weights not loading<a class="headerlink" href="#weights-not-loading" title="Permanent link">&para;</a></h3>
 <p><code>GET /health</code> returns <code>model_loaded: false</code> until the first <code>/predict</code> call (lazy). If a <code>/predict</code> errors with "AlphaGenome weights not loaded":</p>

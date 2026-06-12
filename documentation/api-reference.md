@@ -304,7 +304,7 @@ a = np.frombuffer(raw, dtype=arr["dtype"]).reshape(arr["shape"])
 - `400` — sequence longer than `limits.max_sequence_length` (131,072), unknown head, or resolution mismatch.
 - `503` — weights or genome FASTA missing.
 
-**Latency (CPU, all 11 heads, 128bp, 131kb input)**: ~15–25 s cold (first call), ~8–15 s warm. Use `OMNIGEMMA_ALPHAGENOME__DEVICE=cuda` for <1s/call on a decent GPU.
+**Latency (CPU, all 11 heads, 128bp, 131kb input)**: ~15–25 s cold (first call), ~8–15 s warm. Use `ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda` for <1s/call on a decent GPU.
 
 ---
 

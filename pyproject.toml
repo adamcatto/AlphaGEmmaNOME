@@ -1,13 +1,13 @@
 [project]
-name = "omnigemmanome"
+name = "alphagemmanome"
 version = "0.0.1"
 description = "Functional-genomics chat app: Gemma-4B (Ollama) + LangGraph + alphagenome-pytorch"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "omnigemmanome-config",
-    "omnigemmanome-alphagenome-svc",
-    "omnigemmanome-agent-backend",
+    "alphagemmanome-config",
+    "alphagemmanome-alphagenome-svc",
+    "alphagemmanome-agent-backend",
     "uvicorn>=0.44.0",
 ]
 
@@ -17,9 +17,9 @@ url = "https://download.pytorch.org/whl/cu126"
 explicit = true
 
 [tool.uv.sources]
-omnigemmanome-config = { workspace = true }
-omnigemmanome-alphagenome-svc = { workspace = true }
-omnigemmanome-agent-backend = { workspace = true }
+alphagemmanome-config = { workspace = true }
+alphagemmanome-alphagenome-svc = { workspace = true }
+alphagemmanome-agent-backend = { workspace = true }
 torch = { index = "pytorch-cu126" }
 
 [tool.uv.workspace]

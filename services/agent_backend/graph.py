@@ -1,4 +1,4 @@
-"""LangGraph StateGraph for OmniGemmaNome.
+"""LangGraph StateGraph for AlphaGEmmaNOME.
 
 Topology:
     START → intent_router

@@ -98,7 +98,7 @@ class ToolToggle(BaseModel):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="OMNIGEMMA_",
+        env_prefix="ALPHAGEMMA_",
         env_nested_delimiter="__",
         extra="ignore",
     )

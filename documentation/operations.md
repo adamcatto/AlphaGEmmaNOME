@@ -12,7 +12,7 @@ docker-compose up
 
 Service wiring:
 
-- `agent-backend` gets `OMNIGEMMA_OLLAMA__BASE_URL=http://ollama:11434` and `OMNIGEMMA_ALPHAGENOME__SERVICE_URL=http://alphagenome-svc:8001` so it talks to the sibling containers by name.
+- `agent-backend` gets `ALPHAGEMMA_OLLAMA__BASE_URL=http://ollama:11434` and `ALPHAGEMMA_ALPHAGENOME__SERVICE_URL=http://alphagenome-svc:8001` so it talks to the sibling containers by name.
 - `frontend` is built as its own image; the browser still talks to `localhost:8000`, so `VITE_AGENT_BACKEND_URL` is set accordingly.
 - `ollama_data` volume persists pulled models between restarts.
 - `config/` is mounted read-only into both Python services; `services/alphagenome_svc/data/` is mounted read-write into the alphagenome-svc container (the model and genome live here).
@@ -85,8 +85,8 @@ INFO services.agent_backend router classified 'Where do TFs bind near BRCA1?' ->
 
 The AlphaGenome forward pass is 10–30× faster on GPU. Two moves:
 
-1. Host alphagenome-svc on a machine with a CUDA-capable GPU and set `OMNIGEMMA_ALPHAGENOME__DEVICE=cuda`.
-2. Point the agent-backend at it via `OMNIGEMMA_ALPHAGENOME__SERVICE_URL=http://<gpu-host>:8001`.
+1. Host alphagenome-svc on a machine with a CUDA-capable GPU and set `ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda`.
+2. Point the agent-backend at it via `ALPHAGEMMA_ALPHAGENOME__SERVICE_URL=http://<gpu-host>:8001`.
 
 Weight-loading honors whatever torch sees; ensure the container has `nvidia-container-toolkit` and `--gpus all` (or a PyTorch CUDA base image).
 
@@ -139,7 +139,7 @@ A 131-kb input at float32 across all 11 heads is ~400 MB of activations. Options
 
 - Reduce `heads` at the call site.
 - Use `resolution: "128bp"` (default) rather than `"1bp"` (saves ~128× on 1D heads).
-- Switch to GPU via `OMNIGEMMA_ALPHAGENOME__DEVICE=cuda`.
+- Switch to GPU via `ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda`.
 
 ### Weights not loading
 

@@ -25,7 +25,7 @@
     
     
       
-        <title>Configuration - OmniGemmaNome</title>
+        <title>Configuration - AlphaGEmmaNOME</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="index.html" title="OmniGemmaNome" class="md-header__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+    <a href="index.html" title="AlphaGEmmaNOME" class="md-header__button md-logo" aria-label="AlphaGEmmaNOME" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            OmniGemmaNome
+            AlphaGEmmaNOME
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -310,13 +310,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="index.html" title="OmniGemmaNome" class="md-nav__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+    <a href="index.html" title="AlphaGEmmaNOME" class="md-nav__button md-logo" aria-label="AlphaGEmmaNOME" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    OmniGemmaNome
+    AlphaGEmmaNOME
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -1296,7 +1296,7 @@
 <li><code>config/settings.yaml</code> — defaults.</li>
 <li><code>config/settings.{APP_ENV}.yaml</code> — overlay for the selected environment (<code>dev</code> or <code>prod</code>). <code>APP_ENV</code> defaults to <code>dev</code>.</li>
 <li><code>config/{paths,models,huggingface,ollama,alphagenome,ensembl,agent,tools}.yaml</code> — domain-specific files, one per top-level key.</li>
-<li>Environment variables with prefix <code>OMNIGEMMA_</code> and nested-delimiter <code>__</code>. Example: <code>OMNIGEMMA_ALPHAGENOME__DEVICE=cuda</code> sets <code>alphagenome.device</code>.</li>
+<li>Environment variables with prefix <code>ALPHAGEMMA_</code> and nested-delimiter <code>__</code>. Example: <code>ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda</code> sets <code>alphagenome.device</code>.</li>
 </ol>
 <p>The merged dict is validated against the <code>Settings</code> Pydantic model and cached via <code>functools.lru_cache</code>.</p>
 <p>Calling:</p>
@@ -1386,7 +1386,7 @@
 <ul>
 <li><strong><code>default_heads</code></strong> — the set returned when the agent/<code>predict_tracks</code> doesn't specify. Available: <code>atac, dnase, procap, cage, rna_seq, chip_tf, chip_histone, contact_maps, splice_sites, splice_junctions, splice_site_usage</code>.</li>
 <li><strong><code>default_resolution</code></strong> — <code>128bp</code> is roughly 1000× smaller tensors than <code>1bp</code> and sufficient for every current viz panel.</li>
-<li><strong><code>device</code></strong> — <code>cpu</code> / <code>cuda</code> / <code>mps</code>. Override with <code>OMNIGEMMA_ALPHAGENOME__DEVICE=cuda</code>.</li>
+<li><strong><code>device</code></strong> — <code>cpu</code> / <code>cuda</code> / <code>mps</code>. Override with <code>ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda</code>.</li>
 <li><strong><code>dtype</code></strong> — declared but not currently threaded through to weight-loading; pytorch will run at whatever the checkpoint was saved as.</li>
 </ul>
 <h2 id="ensemblyaml"><code>ensembl.yaml</code><a class="headerlink" href="#ensemblyaml" title="Permanent link">&para;</a></h2>
@@ -1485,23 +1485,23 @@
 <td><code>dev</code> or <code>prod</code> — picks the overlay</td>
 </tr>
 <tr>
-<td><code>OMNIGEMMA_OLLAMA__BASE_URL</code></td>
+<td><code>ALPHAGEMMA_OLLAMA__BASE_URL</code></td>
 <td>override Ollama URL (docker-compose uses this)</td>
 </tr>
 <tr>
-<td><code>OMNIGEMMA_OLLAMA__MODEL</code></td>
+<td><code>ALPHAGEMMA_OLLAMA__MODEL</code></td>
 <td>swap model without editing YAML</td>
 </tr>
 <tr>
-<td><code>OMNIGEMMA_ALPHAGENOME__SERVICE_URL</code></td>
+<td><code>ALPHAGEMMA_ALPHAGENOME__SERVICE_URL</code></td>
 <td>point agent-backend at a remote alphagenome-svc</td>
 </tr>
 <tr>
-<td><code>OMNIGEMMA_ALPHAGENOME__DEVICE</code></td>
+<td><code>ALPHAGEMMA_ALPHAGENOME__DEVICE</code></td>
 <td><code>cpu</code> / <code>cuda</code> / <code>mps</code></td>
 </tr>
 <tr>
-<td><code>OMNIGEMMA_AGENT__MAX_STEPS</code></td>
+<td><code>ALPHAGEMMA_AGENT__MAX_STEPS</code></td>
 <td>cap agent reasoning steps</td>
 </tr>
 <tr>

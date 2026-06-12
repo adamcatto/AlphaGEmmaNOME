@@ -9,7 +9,7 @@ All non-secret config lives in [config/](../config/) as YAML. Secrets live in `.
 1. `config/settings.yaml` — defaults.
 2. `config/settings.{APP_ENV}.yaml` — overlay for the selected environment (`dev` or `prod`). `APP_ENV` defaults to `dev`.
 3. `config/{paths,models,huggingface,ollama,alphagenome,ensembl,agent,tools}.yaml` — domain-specific files, one per top-level key.
-4. Environment variables with prefix `OMNIGEMMA_` and nested-delimiter `__`. Example: `OMNIGEMMA_ALPHAGENOME__DEVICE=cuda` sets `alphagenome.device`.
+4. Environment variables with prefix `ALPHAGEMMA_` and nested-delimiter `__`. Example: `ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda` sets `alphagenome.device`.
 
 The merged dict is validated against the `Settings` Pydantic model and cached via `functools.lru_cache`.
 
@@ -127,7 +127,7 @@ dtype: float16
 
 - **`default_heads`** — the set returned when the agent/`predict_tracks` doesn't specify. Available: `atac, dnase, procap, cage, rna_seq, chip_tf, chip_histone, contact_maps, splice_sites, splice_junctions, splice_site_usage`.
 - **`default_resolution`** — `128bp` is roughly 1000× smaller tensors than `1bp` and sufficient for every current viz panel.
-- **`device`** — `cpu` / `cuda` / `mps`. Override with `OMNIGEMMA_ALPHAGENOME__DEVICE=cuda`.
+- **`device`** — `cpu` / `cuda` / `mps`. Override with `ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda`.
 - **`dtype`** — declared but not currently threaded through to weight-loading; pytorch will run at whatever the checkpoint was saved as.
 
 ## `ensembl.yaml`
@@ -238,9 +238,9 @@ Every field has a default except the ones in `paths`, `models`, `huggingface`, `
 | Variable | Meaning |
 |---|---|
 | `APP_ENV` | `dev` or `prod` — picks the overlay |
-| `OMNIGEMMA_OLLAMA__BASE_URL` | override Ollama URL (docker-compose uses this) |
-| `OMNIGEMMA_OLLAMA__MODEL` | swap model without editing YAML |
-| `OMNIGEMMA_ALPHAGENOME__SERVICE_URL` | point agent-backend at a remote alphagenome-svc |
-| `OMNIGEMMA_ALPHAGENOME__DEVICE` | `cpu` / `cuda` / `mps` |
-| `OMNIGEMMA_AGENT__MAX_STEPS` | cap agent reasoning steps |
+| `ALPHAGEMMA_OLLAMA__BASE_URL` | override Ollama URL (docker-compose uses this) |
+| `ALPHAGEMMA_OLLAMA__MODEL` | swap model without editing YAML |
+| `ALPHAGEMMA_ALPHAGENOME__SERVICE_URL` | point agent-backend at a remote alphagenome-svc |
+| `ALPHAGEMMA_ALPHAGENOME__DEVICE` | `cpu` / `cuda` / `mps` |
+| `ALPHAGEMMA_AGENT__MAX_STEPS` | cap agent reasoning steps |
 | `HUGGINGFACE_HUB_TOKEN` | for gated HF downloads |

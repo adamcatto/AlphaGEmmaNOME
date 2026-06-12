@@ -1,4 +1,4 @@
-# OmniGemmaNome — LangGraph Overhaul Plan
+# AlphaGEmmaNOME — LangGraph Overhaul Plan
 
 ## Context
 

@@ -18,8 +18,8 @@ from trl import SFTTrainer
 
 # Base local/huggingface model chosen by user
 MODEL_ID = "google/gemma-4-E4B-it"
-DATA_PATH = Path("/opt/software/OmniGemmaNome/services/agent_backend/data/sft_corrections.jsonl")
-OUTPUT_DIR = "/opt/software/OmniGemmaNome/services/agent_backend/data/sft_adapters"
+DATA_PATH = Path("/opt/software/AlphaGEmmaNOME/services/agent_backend/data/sft_corrections.jsonl")
+OUTPUT_DIR = "/opt/software/AlphaGEmmaNOME/services/agent_backend/data/sft_adapters"
 
 
 def load_sft_dataset() -> Dataset:

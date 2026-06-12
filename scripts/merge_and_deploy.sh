@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
-echo "=== OmniGemmaNome Merge and Deploy Pipeline ==="
+echo "=== AlphaGEmmaNOME Merge and Deploy Pipeline ==="
 
 # Define paths
 BASE_MODEL="google/gemma-4-E4B-it"
-ADAPTER_DIR="/opt/software/OmniGemmaNome/services/agent_backend/data/sft_adapters"
-MERGED_DIR="/opt/software/OmniGemmaNome/services/agent_backend/data/merged_model"
-MODELFILE_PATH="/opt/software/OmniGemmaNome/services/agent_backend/data/Modelfile"
+ADAPTER_DIR="/opt/software/AlphaGEmmaNOME/services/agent_backend/data/sft_adapters"
+MERGED_DIR="/opt/software/AlphaGEmmaNOME/services/agent_backend/data/merged_model"
+MODELFILE_PATH="/opt/software/AlphaGEmmaNOME/services/agent_backend/data/Modelfile"
 
 # 1. Merge adapters with base model weights
 echo "1. Merging fine-tuned PEFT adapters back into base model..."
@@ -39,7 +39,7 @@ print('Weights merged and saved successfully!')
 # 2. Write Ollama Modelfile
 echo "2. Formatting Ollama Modelfile..."
 cat <<EOF > "${MODELFILE_PATH}"
-# Modelfile for fine-tuned OmniGemmaNome Agent
+# Modelfile for fine-tuned AlphaGEmmaNOME Agent
 FROM ${MERGED_DIR}
 
 # Set system parameters
@@ -48,7 +48,7 @@ PARAMETER stop <end_of_turn>
 PARAMETER stop <eos>
 
 # Inject Agent System Prompt Template
-SYSTEM """You are OmniGemmaNome, an expert genomic editing assistant. You help scientists plan reference sequence edits (SNVs, deletions, insertions, CTCF/SP1 motif ablation) using AlphaGenome simulation tools. Always think step-by-step inside <thought> tags before responding."""
+SYSTEM """You are AlphaGEmmaNOME, an expert genomic editing assistant. You help scientists plan reference sequence edits (SNVs, deletions, insertions, CTCF/SP1 motif ablation) using AlphaGenome simulation tools. Always think step-by-step inside <thought> tags before responding."""
 EOF
 
 # 3. Import and deploy into local Ollama instance

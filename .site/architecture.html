@@ -25,7 +25,7 @@
     
     
       
-        <title>Architecture - OmniGemmaNome</title>
+        <title>Architecture - AlphaGEmmaNOME</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="index.html" title="OmniGemmaNome" class="md-header__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+    <a href="index.html" title="AlphaGEmmaNOME" class="md-header__button md-logo" aria-label="AlphaGEmmaNOME" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            OmniGemmaNome
+            AlphaGEmmaNOME
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -310,13 +310,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="index.html" title="OmniGemmaNome" class="md-nav__button md-logo" aria-label="OmniGemmaNome" data-md-component="logo">
+    <a href="index.html" title="AlphaGEmmaNOME" class="md-nav__button md-logo" aria-label="AlphaGEmmaNOME" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    OmniGemmaNome
+    AlphaGEmmaNOME
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -1279,7 +1279,7 @@
 </ul>
 <p>Rationale in <a href="../config/tools.yaml">config/tools.yaml</a>: small LLMs cannot plan reliable multi-step chains. Enabling primitives triggers cascades like <code>gene_to_locus</code> → <code>predict_tracks</code> (wrong window) → <code>list_tracks_by_assay</code> loop. A stronger model (Qwen 2.5 14B, Llama 3.1 8B+) can chain primitives; toggle in <code>config/tools.yaml</code>.</p>
 <h2 id="configuration-boundary">Configuration boundary<a class="headerlink" href="#configuration-boundary" title="Permanent link">&para;</a></h2>
-<p>Both Python services import <code>from schema import load_settings</code>. The <a href="../config/">config/</a> package is a separate uv workspace member. YAML files are layered: <code>settings.yaml</code> → <code>settings.{dev,prod}.yaml</code> → environment variables with the <code>OMNIGEMMA_</code> prefix and <code>__</code> as nested-delimiter (e.g. <code>OMNIGEMMA_ALPHAGENOME__DEVICE=cuda</code>). See <a href="configuration.html">configuration.md</a>.</p>
+<p>Both Python services import <code>from schema import load_settings</code>. The <a href="../config/">config/</a> package is a separate uv workspace member. YAML files are layered: <code>settings.yaml</code> → <code>settings.{dev,prod}.yaml</code> → environment variables with the <code>ALPHAGEMMA_</code> prefix and <code>__</code> as nested-delimiter (e.g. <code>ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda</code>). See <a href="configuration.html">configuration.md</a>.</p>
 
 
 

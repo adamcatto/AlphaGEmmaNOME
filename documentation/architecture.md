@@ -91,4 +91,4 @@ Rationale in [config/tools.yaml](../config/tools.yaml): small LLMs cannot plan r
 
 ## Configuration boundary
 
-Both Python services import `from schema import load_settings`. The [config/](../config/) package is a separate uv workspace member. YAML files are layered: `settings.yaml` → `settings.{dev,prod}.yaml` → environment variables with the `OMNIGEMMA_` prefix and `__` as nested-delimiter (e.g. `OMNIGEMMA_ALPHAGENOME__DEVICE=cuda`). See [configuration.md](configuration.md).
+Both Python services import `from schema import load_settings`. The [config/](../config/) package is a separate uv workspace member. YAML files are layered: `settings.yaml` → `settings.{dev,prod}.yaml` → environment variables with the `ALPHAGEMMA_` prefix and `__` as nested-delimiter (e.g. `ALPHAGEMMA_ALPHAGENOME__DEVICE=cuda`). See [configuration.md](configuration.md).

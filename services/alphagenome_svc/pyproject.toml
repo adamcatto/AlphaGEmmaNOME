@@ -1,9 +1,9 @@
 [project]
-name = "omnigemmanome-alphagenome-svc"
+name = "alphagemmanome-alphagenome-svc"
 version = "0.0.1"
 requires-python = ">=3.11"
 dependencies = [
-    "omnigemmanome-config",
+    "alphagemmanome-config",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
     "pydantic>=2.7",
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-omnigemmanome-config = { workspace = true }
+alphagemmanome-config = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

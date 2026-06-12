@@ -7,7 +7,7 @@ from typing import Any
 from ._base import SessionAwareTool, http_client
 
 _EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-_EMAIL = "omnigemmanome@local"
+_EMAIL = "alphagemmanome@local"
 
 
 class QueryClinvar(SessionAwareTool):

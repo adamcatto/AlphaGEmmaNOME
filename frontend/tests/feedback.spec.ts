@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("OmniGemmaNome Alignment & Feedback UI", () => {
+test.describe("AlphaGEmmaNOME Alignment & Feedback UI", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to local dev server (default port 5173 or 5174)
     await page.goto("http://localhost:5173/");
   });
 
   test("should load the chat interface and sequence upload widget", async ({ page }) => {
-    await expect(page.locator("header")).toContainText("OmniGemmaNome");
+    await expect(page.locator("header")).toContainText("AlphaGEmmaNOME");
     const input = page.locator("input[placeholder*='Ask about a gene']");
     await expect(input).toBeVisible();
     await expect(page.locator("text=Upload Fasta")).toBeVisible();

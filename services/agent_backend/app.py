@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
 
 settings = load_settings()
 
-app = FastAPI(title="OmniGemmaNome Agent Backend", lifespan=lifespan)
+app = FastAPI(title="AlphaGEmmaNOME Agent Backend", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.server.cors_origins or ["*"],

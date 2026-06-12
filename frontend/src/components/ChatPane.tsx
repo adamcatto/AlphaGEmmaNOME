@@ -159,7 +159,7 @@ export default function ChatPane() {
 
   return (
     <div style={styles.pane}>
-      <header style={styles.header}>OmniGemmaNome</header>
+      <header style={styles.header}>AlphaGEmmaNOME</header>
       <div style={styles.messages}>
         {messages.map((m, i) => (
           <div key={i} style={{ ...styles.message, ...(m.role === "user" ? styles.userMsg : styles.assistantMsg) }}>

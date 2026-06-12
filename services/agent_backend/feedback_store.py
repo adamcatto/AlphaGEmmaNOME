@@ -6,7 +6,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-DATA_DIR = Path("/opt/software/OmniGemmaNome/services/agent_backend/data")
+DATA_DIR = Path("/opt/software/AlphaGEmmaNOME/services/agent_backend/data")
 DPO_FILE = DATA_DIR / "dpo_preferences.jsonl"
 SFT_FILE = DATA_DIR / "sft_corrections.jsonl"
 

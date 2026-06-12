@@ -1,4 +1,4 @@
-# OmniGemmaNome
+# AlphaGEmmaNOME
 
 Interactive functional-genomics exploration via chat. A Gemma-based agent (served by Ollama, structured using a [LangGraph](https://github.com/langchain-ai/langgraph) conditional state graph) orchestrates calls to an [alphagenome-pytorch](https://huggingface.co/gtca/alphagenome_pytorch) predictor and renders the results in a custom interactive track viewer.
 
@@ -58,7 +58,7 @@ curl localhost:8000/health
 
 ## Chat Interface & Agent Orchestration
 
-OmniGemmaNome uses a state-of-the-art asynchronous multi-node orchestration engine to bridge the gap between human instruction and raw deep learning simulators.
+AlphaGEmmaNOME uses a state-of-the-art asynchronous multi-node orchestration engine to bridge the gap between human instruction and raw deep learning simulators.
 
 ### 🗺️ System Information Flow Architecture
 When you type a query in the chat interface, information travels across three main components in real-time. The diagram below illustrates how user sessions, LangGraph states, and microservices exchange instructions, tool actions, and predictions:
@@ -183,7 +183,7 @@ Scaffold. AlphaGenome track metadata is a placeholder — see [services/alphagen
 
 ## Inverse Genome Editing & Agent Alignment Loop
 
-We have extended OmniGemmaNome with a powerful inverse-design genomic editing engine and a full closed-loop human-feedback + automated alignment (RLAIF) pipeline.
+We have extended AlphaGEmmaNOME with a powerful inverse-design genomic editing engine and a full closed-loop human-feedback + automated alignment (RLAIF) pipeline.
 
 ### 🧬 Inverse Genome Editing Engine
 An advanced unified solver supports multiple edit styles to achieve target functional objectives (maximizing, minimizing, or matching specific values on regulatory tracks). The solver evaluates proposed edits based on their **Log2 Fold-Change (LFC)** over the no-edit baseline reference signal, rather than raw differential signals, to more accurately represent biological impact. Signal tracking and LFC computation are centered precisely around the edit site by taking the mean signal of the **3 center bins** of the spatial dimension(s) instead of averaging the entire sequence track.
